@@ -1,0 +1,23 @@
+# Quality & Consistency QA Thresholds
+identity:
+  min_acceptable_score: 0.82
+  target_score: 0.88
+  drift_warning_threshold: 0.15
+
+wardrobe:
+  min_acceptable_score: 0.80
+  strict_color_match: true
+
+scene:
+  min_acceptable_score: 0.78
+  geometry_tolerance: 0.20
+
+state:
+  min_acceptable_score: 0.85
+  prop_visibility_required: true
+
+technical:
+  check_black_frames: true
+  check_aspect_ratio: true
+  expected_aspect_ratio: "9:16"
+  min_video_fps: 24

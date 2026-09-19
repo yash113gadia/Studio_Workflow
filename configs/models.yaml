@@ -1,0 +1,37 @@
+# Central Model Store Registry
+models:
+  - id: flux2_klein_4b_distilled
+    role: image_primary
+    source_url: "https://huggingface.co/black-forest-labs/FLUX.2-Klein-4B"
+    local_path: "models/image/flux2_klein_4b_distilled.safetensors"
+    size_bytes: 4300000000
+    sha256: ""
+    license: "apache-2.0"
+    commercial_status: "allowed"
+    backends: ["comfyui"]
+    installed: false
+    tested: false
+
+  - id: qwen_image_edit_2511_int8
+    role: image_specialist_edit
+    source_url: "https://huggingface.co/Qwen/Qwen-Image-Edit-2511"
+    local_path: "models/image/qwen_image_edit_2511_int8.safetensors"
+    size_bytes: 3500000000
+    sha256: ""
+    license: "apache-2.0"
+    commercial_status: "allowed"
+    backends: ["comfyui"]
+    installed: false
+    tested: false
+
+  - id: minimax_h3_wangp_low_vram
+    role: video_hero
+    source_url: "https://huggingface.co/MiniMaxAI/MiniMax-H3"
+    local_path: "models/video/minimax_h3"
+    size_bytes: 12000000000
+    sha256: ""
+    license: "minimax-community"
+    commercial_status: "review_required"
+    backends: ["wangp"]
+    installed: false
+    tested: false

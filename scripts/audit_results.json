@@ -1,0 +1,399 @@
+﻿{
+    "OS_Caption":  "Microsoft Windows 11 Home",
+    "OS_Version":  "10.0.26200",
+    "OS_Build":  "26200",
+    "OS_Architecture":  "64-bit",
+    "Total_Visible_Memory_KB":  16097532,
+    "Free_Physical_Memory_KB":  3914588,
+    "CPU_Name":  "AMD Ryzen 9 5900HX with Radeon Graphics        ",
+    "CPU_Cores":  8,
+    "CPU_LogicalProcessors":  16,
+    "Video_Controllers":  [
+                              {
+                                  "Name":  "NVIDIA GeForce RTX 3070 Laptop GPU",
+                                  "DriverVersion":  "32.0.16.1060",
+                                  "AdapterRAM":  4293918720
+                              },
+                              {
+                                  "Name":  "AMD Radeon(TM) Graphics",
+                                  "DriverVersion":  "31.0.21923.12002",
+                                  "AdapterRAM":  536870912
+                              }
+                          ],
+    "NVIDIA_SMI_Output":  "Sat Sep 19 13:38:06 2026       \n+-----------------------------------------------------------------------------------------+\n| NVIDIA-SMI 610.60                 KMD Version: 610.60        CUDA UMD Version: 13.3     |\n+-----------------------------------------+------------------------+----------------------+\n| GPU  Name                  Driver-Model | Bus-Id          Disp.A | Volatile Uncorr. ECC |\n| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |\n|                                         |                        |               MIG M. |\n|=========================================+========================+======================|\n|   0  NVIDIA GeForce RTX 3070 ...  WDDM  |   00000000:01:00.0 Off |                  N/A |\n| N/A   55C    P8             16W /  115W |     385MiB /   8192MiB |     26%      Default |\n|                                         |                        |                  N/A |\n+-----------------------------------------+------------------------+----------------------+\n\n+-----------------------------------------------------------------------------------------+\n| Processes:                                                                              |\n|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |\n|        ID   ID                                                               Usage      |\n|=========================================================================================|\n|    0   N/A  N/A            6860    C+G   ...yb3d8bbwe\\WindowsTerminal.exe      N/A      |\n|    0   N/A  N/A           11760    C+G   ...y\\StartMenuExperienceHost.exe      N/A      |\n|    0   N/A  N/A           14320    C+G   ..._cw5n1h2txyewy\\SearchHost.exe      N/A      |\n|    0   N/A  N/A           14696    C+G   ...5n1h2txyewy\\TextInputHost.exe      N/A      |\n|    0   N/A  N/A           19032    C+G   ...Browser\\Application\\brave.exe      N/A      |\n|    0   N/A  N/A           20828    C+G   ...App_cw5n1h2txyewy\\LockApp.exe      N/A      |\n|    0   N/A  N/A           23456    C+G   ...adeonsoftware\\AMDRSSrcExt.exe      N/A      |\n|    0   N/A  N/A           24328    C+G   ...Browser\\Application\\brave.exe      N/A      |\n|    0   N/A  N/A           24520    C+G   ...ge-WebView\\msedgewebview2.exe      N/A      |\n|    0   N/A  N/A           27408    C+G   ....0.3856.72\\msedgewebview2.exe      N/A      |\n|    0   N/A  N/A           27756    C+G   ...cwf2zmmt10c\\PSExpressCore.exe      N/A      |\n|    0   N/A  N/A           34012    C+G   ....0.3856.72\\msedgewebview2.exe      N/A      |\n+-----------------------------------------------------------------------------------------+",
+    "Disks":  {
+                  "Name":  "C",
+                  "Root":  "C:\\",
+                  "FreeGB":  268.85,
+                  "UsedGB":  665.47
+              },
+    "Pagefile":  {
+                     "CimClass":  {
+                                      "CimSuperClassName":  "CIM_LogicalElement",
+                                      "CimSuperClass":  {
+                                                            "CimSuperClassName":  "CIM_ManagedSystemElement",
+                                                            "CimSuperClass":  {
+                                                                                  "CimSuperClassName":  null,
+                                                                                  "CimSuperClass":  null,
+                                                                                  "CimClassProperties":  [
+                                                                                                             "Caption",
+                                                                                                             "Description",
+                                                                                                             "InstallDate",
+                                                                                                             "Name",
+                                                                                                             "Status"
+                                                                                                         ],
+                                                                                  "CimClassQualifiers":  [
+                                                                                                             "Abstract = True",
+                                                                                                             "Locale = 1033",
+                                                                                                             "UUID = \"{8502C517-5FBB-11D2-AAC1-006008C78BC7}\""
+                                                                                                         ],
+                                                                                  "CimClassMethods":  [
+
+                                                                                                      ],
+                                                                                  "CimSystemProperties":  {
+                                                                                                              "Namespace":  "ROOT/cimv2",
+                                                                                                              "ServerName":  "NIKHIL-PC",
+                                                                                                              "ClassName":  "CIM_ManagedSystemElement",
+                                                                                                              "Path":  null
+                                                                                                          }
+                                                                              },
+                                                            "CimClassProperties":  [
+                                                                                       {
+                                                                                           "Name":  "Caption",
+                                                                                           "Value":  null,
+                                                                                           "CimType":  14,
+                                                                                           "Flags":  "Property, ReadOnly, NullValue",
+                                                                                           "Qualifiers":  "MaxLen = 64 read = True",
+                                                                                           "ReferenceClassName":  null
+                                                                                       },
+                                                                                       {
+                                                                                           "Name":  "Description",
+                                                                                           "Value":  null,
+                                                                                           "CimType":  14,
+                                                                                           "Flags":  "Property, ReadOnly, NullValue",
+                                                                                           "Qualifiers":  "read = True",
+                                                                                           "ReferenceClassName":  null
+                                                                                       },
+                                                                                       {
+                                                                                           "Name":  "InstallDate",
+                                                                                           "Value":  null,
+                                                                                           "CimType":  13,
+                                                                                           "Flags":  "Property, ReadOnly, NullValue",
+                                                                                           "Qualifiers":  "MappingStrings = ... read = True",
+                                                                                           "ReferenceClassName":  null
+                                                                                       },
+                                                                                       {
+                                                                                           "Name":  "Name",
+                                                                                           "Value":  null,
+                                                                                           "CimType":  14,
+                                                                                           "Flags":  "Property, ReadOnly, NullValue",
+                                                                                           "Qualifiers":  "read = True",
+                                                                                           "ReferenceClassName":  null
+                                                                                       },
+                                                                                       {
+                                                                                           "Name":  "Status",
+                                                                                           "Value":  null,
+                                                                                           "CimType":  14,
+                                                                                           "Flags":  "Property, ReadOnly, NullValue",
+                                                                                           "Qualifiers":  "MaxLen = 10 read = True ValueMap = ...",
+                                                                                           "ReferenceClassName":  null
+                                                                                       }
+                                                                                   ],
+                                                            "CimClassQualifiers":  [
+                                                                                       {
+                                                                                           "Name":  "Locale",
+                                                                                           "Value":  1033,
+                                                                                           "CimType":  7,
+                                                                                           "Flags":  "EnableOverride, ToSubclass"
+                                                                                       },
+                                                                                       {
+                                                                                           "Name":  "UUID",
+                                                                                           "Value":  "{8502C518-5FBB-11D2-AAC1-006008C78BC7}",
+                                                                                           "CimType":  14,
+                                                                                           "Flags":  "EnableOverride, ToSubclass"
+                                                                                       },
+                                                                                       {
+                                                                                           "Name":  "Abstract",
+                                                                                           "Value":  true,
+                                                                                           "CimType":  1,
+                                                                                           "Flags":  "EnableOverride, Restricted"
+                                                                                       }
+                                                                                   ],
+                                                            "CimClassMethods":  [
+
+                                                                                ],
+                                                            "CimSystemProperties":  {
+                                                                                        "Namespace":  "ROOT/cimv2",
+                                                                                        "ServerName":  "NIKHIL-PC",
+                                                                                        "ClassName":  "CIM_LogicalElement",
+                                                                                        "Path":  null
+                                                                                    }
+                                                        },
+                                      "CimClassProperties":  [
+                                                                 {
+                                                                     "Name":  "Caption",
+                                                                     "Value":  null,
+                                                                     "CimType":  14,
+                                                                     "Flags":  "Property, ReadOnly, NullValue",
+                                                                     "Qualifiers":  [
+                                                                                        "MaxLen = 64",
+                                                                                        "read = True"
+                                                                                    ],
+                                                                     "ReferenceClassName":  null
+                                                                 },
+                                                                 {
+                                                                     "Name":  "Description",
+                                                                     "Value":  null,
+                                                                     "CimType":  14,
+                                                                     "Flags":  "Property, ReadOnly, NullValue",
+                                                                     "Qualifiers":  [
+                                                                                        "read = True"
+                                                                                    ],
+                                                                     "ReferenceClassName":  null
+                                                                 },
+                                                                 {
+                                                                     "Name":  "InstallDate",
+                                                                     "Value":  null,
+                                                                     "CimType":  13,
+                                                                     "Flags":  "Property, ReadOnly, NullValue",
+                                                                     "Qualifiers":  [
+                                                                                        "MappingStrings = ...",
+                                                                                        "read = True"
+                                                                                    ],
+                                                                     "ReferenceClassName":  null
+                                                                 },
+                                                                 {
+                                                                     "Name":  "Name",
+                                                                     "Value":  null,
+                                                                     "CimType":  14,
+                                                                     "Flags":  "Property, Key, ReadOnly, NullValue",
+                                                                     "Qualifiers":  [
+                                                                                        "read = True",
+                                                                                        "key = True",
+                                                                                        "MappingStrings = ...",
+                                                                                        "Override = \"Name\""
+                                                                                    ],
+                                                                     "ReferenceClassName":  null
+                                                                 },
+                                                                 {
+                                                                     "Name":  "Status",
+                                                                     "Value":  null,
+                                                                     "CimType":  14,
+                                                                     "Flags":  "Property, ReadOnly, NullValue",
+                                                                     "Qualifiers":  [
+                                                                                        "MaxLen = 10",
+                                                                                        "read = True",
+                                                                                        "ValueMap = ..."
+                                                                                    ],
+                                                                     "ReferenceClassName":  null
+                                                                 },
+                                                                 {
+                                                                     "Name":  "AllocatedBaseSize",
+                                                                     "Value":  null,
+                                                                     "CimType":  6,
+                                                                     "Flags":  "Property, ReadOnly, NullValue",
+                                                                     "Qualifiers":  [
+                                                                                        "MappingStrings = ...",
+                                                                                        "read = True"
+                                                                                    ],
+                                                                     "ReferenceClassName":  null
+                                                                 },
+                                                                 {
+                                                                     "Name":  "CurrentUsage",
+                                                                     "Value":  null,
+                                                                     "CimType":  6,
+                                                                     "Flags":  "Property, ReadOnly, NullValue",
+                                                                     "Qualifiers":  [
+                                                                                        "MappingStrings = ...",
+                                                                                        "read = True"
+                                                                                    ],
+                                                                     "ReferenceClassName":  null
+                                                                 },
+                                                                 {
+                                                                     "Name":  "PeakUsage",
+                                                                     "Value":  null,
+                                                                     "CimType":  6,
+                                                                     "Flags":  "Property, ReadOnly, NullValue",
+                                                                     "Qualifiers":  [
+                                                                                        "MappingStrings = ...",
+                                                                                        "read = True"
+                                                                                    ],
+                                                                     "ReferenceClassName":  null
+                                                                 },
+                                                                 {
+                                                                     "Name":  "TempPageFile",
+                                                                     "Value":  null,
+                                                                     "CimType":  1,
+                                                                     "Flags":  "Property, ReadOnly, NullValue",
+                                                                     "Qualifiers":  [
+                                                                                        "MappingStrings = ...",
+                                                                                        "read = True"
+                                                                                    ],
+                                                                     "ReferenceClassName":  null
+                                                                 }
+                                                             ],
+                                      "CimClassQualifiers":  [
+                                                                 {
+                                                                     "Name":  "Locale",
+                                                                     "Value":  1033,
+                                                                     "CimType":  7,
+                                                                     "Flags":  "EnableOverride, ToSubclass"
+                                                                 },
+                                                                 {
+                                                                     "Name":  "UUID",
+                                                                     "Value":  "{9B3AC16A-EEE5-11d2-B13B-00105A1F77A1}",
+                                                                     "CimType":  14,
+                                                                     "Flags":  "EnableOverride, ToSubclass"
+                                                                 },
+                                                                 {
+                                                                     "Name":  "dynamic",
+                                                                     "Value":  true,
+                                                                     "CimType":  1,
+                                                                     "Flags":  "EnableOverride, ToSubclass"
+                                                                 },
+                                                                 {
+                                                                     "Name":  "Privileges",
+                                                                     "Value":  [
+                                                                                   "SeCreatePagefilePrivilege"
+                                                                               ],
+                                                                     "CimType":  30,
+                                                                     "Flags":  "EnableOverride, ToSubclass"
+                                                                 },
+                                                                 {
+                                                                     "Name":  "provider",
+                                                                     "Value":  "CIMWin32",
+                                                                     "CimType":  14,
+                                                                     "Flags":  "EnableOverride, ToSubclass"
+                                                                 }
+                                                             ],
+                                      "CimClassMethods":  [
+
+                                                          ],
+                                      "CimSystemProperties":  {
+                                                                  "Namespace":  "root/cimv2",
+                                                                  "ServerName":  "NIKHIL-PC",
+                                                                  "ClassName":  "Win32_PageFileUsage",
+                                                                  "Path":  null
+                                                              }
+                                  },
+                     "CimInstanceProperties":  [
+                                                   {
+                                                       "Name":  "Caption",
+                                                       "Value":  "C:\\pagefile.sys",
+                                                       "CimType":  14,
+                                                       "Flags":  "Property, ReadOnly, NotModified",
+                                                       "IsValueModified":  false
+                                                   },
+                                                   {
+                                                       "Name":  "Description",
+                                                       "Value":  "C:\\pagefile.sys",
+                                                       "CimType":  14,
+                                                       "Flags":  "Property, ReadOnly, NotModified",
+                                                       "IsValueModified":  false
+                                                   },
+                                                   {
+                                                       "Name":  "InstallDate",
+                                                       "Value":  "\/Date(1645432826544)\/",
+                                                       "CimType":  13,
+                                                       "Flags":  "Property, ReadOnly, NotModified",
+                                                       "IsValueModified":  false
+                                                   },
+                                                   {
+                                                       "Name":  "Name",
+                                                       "Value":  "C:\\pagefile.sys",
+                                                       "CimType":  14,
+                                                       "Flags":  "Property, Key, ReadOnly, NotModified",
+                                                       "IsValueModified":  false
+                                                   },
+                                                   {
+                                                       "Name":  "Status",
+                                                       "Value":  null,
+                                                       "CimType":  14,
+                                                       "Flags":  "Property, ReadOnly, NotModified, NullValue",
+                                                       "IsValueModified":  false
+                                                   },
+                                                   {
+                                                       "Name":  "AllocatedBaseSize",
+                                                       "Value":  13312,
+                                                       "CimType":  6,
+                                                       "Flags":  "Property, ReadOnly, NotModified",
+                                                       "IsValueModified":  false
+                                                   },
+                                                   {
+                                                       "Name":  "CurrentUsage",
+                                                       "Value":  278,
+                                                       "CimType":  6,
+                                                       "Flags":  "Property, ReadOnly, NotModified",
+                                                       "IsValueModified":  false
+                                                   },
+                                                   {
+                                                       "Name":  "PeakUsage",
+                                                       "Value":  714,
+                                                       "CimType":  6,
+                                                       "Flags":  "Property, ReadOnly, NotModified",
+                                                       "IsValueModified":  false
+                                                   },
+                                                   {
+                                                       "Name":  "TempPageFile",
+                                                       "Value":  false,
+                                                       "CimType":  1,
+                                                       "Flags":  "Property, ReadOnly, NotModified",
+                                                       "IsValueModified":  false
+                                                   }
+                                               ],
+                     "CimSystemProperties":  {
+                                                 "Namespace":  "root/cimv2",
+                                                 "ServerName":  "NIKHIL-PC",
+                                                 "ClassName":  "Win32_PageFileUsage",
+                                                 "Path":  null
+                                             },
+                     "Caption":  "C:\\pagefile.sys",
+                     "Description":  "C:\\pagefile.sys",
+                     "InstallDate":  "\/Date(1645432826544)\/",
+                     "Name":  "C:\\pagefile.sys",
+                     "Status":  null,
+                     "AllocatedBaseSize":  13312,
+                     "CurrentUsage":  278,
+                     "PeakUsage":  714,
+                     "TempPageFile":  false,
+                     "PSComputerName":  null
+                 },
+    "Tools":  {
+                  "python":  {
+                                 "Version":  "Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings \u003e Apps \u003e Advanced app settings \u003e App execution aliases.",
+                                 "Path":  "C:\\Users\\nikhi\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe"
+                             },
+                  "py":  "NOT INSTALLED / NOT IN PATH",
+                  "git":  "NOT INSTALLED / NOT IN PATH",
+                  "git-lfs":  "NOT INSTALLED / NOT IN PATH",
+                  "ffmpeg":  "NOT INSTALLED / NOT IN PATH",
+                  "ffprobe":  "NOT INSTALLED / NOT IN PATH",
+                  "uv":  "NOT INSTALLED / NOT IN PATH",
+                  "pip":  "NOT INSTALLED / NOT IN PATH",
+                  "conda":  "NOT INSTALLED / NOT IN PATH",
+                  "micromamba":  "NOT INSTALLED / NOT IN PATH",
+                  "node":  "NOT INSTALLED / NOT IN PATH",
+                  "npm":  "NOT INSTALLED / NOT IN PATH",
+                  "pnpm":  "NOT INSTALLED / NOT IN PATH",
+                  "winget":  {
+                                 "Version":  "v1.29.290",
+                                 "Path":  "C:\\Users\\nikhi\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe"
+                             }
+              },
+    "VS_Build_Tools":  "vswhere not found",
+    "Port_Status":  {
+                        "8000":  "AVAILABLE",
+                        "8188":  "AVAILABLE",
+                        "7860":  "AVAILABLE",
+                        "8080":  "AVAILABLE"
+                    },
+    "Existing_ComfyUI":  {
+
+                         },
+    "Existing_Wan":  {
+
+                     },
+    "Existing_Caches":  {
+
+                        }
+}

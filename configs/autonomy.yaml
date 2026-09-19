@@ -1,0 +1,18 @@
+# Autonomy Modes Configuration
+autonomy_modes:
+  auto:
+    description: "AI makes all creative and technical selections unless a hard failure occurs."
+  review:
+    description: "AI does everything but pauses at selected approval gates."
+  manual:
+    description: "User can override characters, outfits, shot plans, render models, thumbnails, etc."
+
+active_mode: "review"
+
+human_approval_gates:
+  - series_art_style
+  - lead_character_casting
+  - initial_canonical_wardrobe
+  - episode_storyboard
+  - final_episode_master
+  - thumbnail_selection

@@ -1,0 +1,32 @@
+# Standardized Camera Grammar
+approved_shot_types:
+  - ESTABLISHING
+  - WIDE_TWO_SHOT
+  - MEDIUM_TWO_SHOT
+  - OTS_A
+  - OTS_B
+  - MEDIUM_A
+  - MEDIUM_B
+  - CLOSEUP_A
+  - CLOSEUP_B
+  - EXTREME_CLOSEUP
+  - INSERT_HAND
+  - INSERT_OBJECT
+  - LOW_ANGLE
+  - HIGH_ANGLE
+  - TRACKING
+
+approved_camera_motions:
+  - STATIC
+  - SLOW_PUSH
+  - SLOW_PULL
+  - PAN_LEFT
+  - PAN_RIGHT
+  - LIGHT_HANDHELD
+  - TRACK_FORWARD
+  - TRACK_SIDE
+
+lens_defaults:
+  dialogue_close_up: "85mm"
+  medium_conversation: "50mm"
+  establishing_wide: "35mm"

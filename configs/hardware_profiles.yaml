@@ -1,0 +1,14 @@
+# Hardware Profiles Configuration
+profiles:
+  rtx_3070_laptop_8gb:
+    description: "NVIDIA RTX 3070 Laptop 8GB, 16GB Host RAM"
+    vram_gb: 8
+    host_ram_gb: 16
+    cpu_cores: 8
+    max_concurrent_heavy_gpu_jobs: 1
+    default_render_aspect: "9:16"
+    default_generation_resolution: [480, 864]
+    max_hero_duration_s: 6
+    memory_strategy: "aggressive_offload_and_sequential"
+
+active_profile: "rtx_3070_laptop_8gb"

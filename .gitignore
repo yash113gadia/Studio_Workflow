@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+environments/
+venv/
+.venv/
+
+# Studio dynamic data & model weights
+models/
+cache/
+temp/
+logs/
+*.safetensors
+*.ckpt
+*.pt
+*.bin
+*.gguf
+*.onnx
+
+# Render intermediates & outputs
+projects/*/exports/
+projects/*/cache/
+projects/*/backups/
+*.mp4
+*.wav
+*.png
+*.jpg
+*.jpeg
+
+# Database journals
+*.db-journal
+*.db-wal
+*.db-shm
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

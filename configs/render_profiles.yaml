@@ -1,0 +1,38 @@
+# Render Engine Routing Profiles
+profiles:
+  tier_c_2_5d:
+    engine: "internal_ffmpeg_depth"
+    cost_tier: "C"
+    default_duration_s: 3.5
+    vram_cost_mb: 0
+    gpu_required: false
+
+  tier_b_controlled_motion:
+    engine: "scail2"
+    cost_tier: "B"
+    default_duration_s: 5.0
+    resolution: [480, 864]
+    candidates: 1
+    gpu_required: true
+
+  tier_a_hero_generative:
+    engine: "minimax_h3_wangp"
+    cost_tier: "A"
+    default_duration_s: 5.0
+    resolution: [480, 864]
+    candidates: 3
+    gpu_required: true
+
+  keyframe_flux:
+    engine: "flux2_klein_4b_distilled"
+    cost_tier: "Asset"
+    default_steps: 4
+    resolution: [480, 864]
+    candidates: 3
+    gpu_required: true
+
+  upscale_post:
+    engine: "flashvsr_or_seedvr2"
+    cost_tier: "Post"
+    target_resolution: [1080, 1920]
+    gpu_required: true
