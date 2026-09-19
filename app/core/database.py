@@ -20,6 +20,8 @@ def get_connection() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode = WAL")
     return conn
 
+get_db_connection = get_connection
+
 
 def init_db():
     conn = get_connection()
@@ -368,5 +370,75 @@ def init_db():
     VALUES (2, ?)
     """, (datetime.utcnow().isoformat(),))
 
+    # ========================================================
+    # Phase 8: Visual QA v1: DINO Embeddings & Candidate Reranking
+    # ========================================================
+
+    # 17. Visual Embeddings Cache
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS visual_embeddings (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        sub_slot TEXT DEFAULT 'CANON_DEFAULT',
+        asset_id TEXT,
+        model_name TEXT NOT NULL,
+        dim INTEGER NOT NULL,
+        embedding_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 18. Candidate Evaluations & Multi-Candidate Reranking
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS candidate_evaluations (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        shot_id TEXT,
+        candidate_id TEXT NOT NULL,
+        candidate_path TEXT NOT NULL,
+        character_id TEXT,
+        location_id TEXT,
+        raw_scores_json TEXT NOT NULL,
+        normalized_scores_json TEXT NOT NULL,
+        composite_score REAL NOT NULL,
+        rank INTEGER DEFAULT 1,
+        status TEXT DEFAULT 'ALTERNATIVE',
+        is_winner INTEGER DEFAULT 0,
+        rejection_reasons_json TEXT DEFAULT '[]',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 19. Longitudinal Identity Drift Tracker
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS qa_drift_logs (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        character_id TEXT NOT NULL,
+        episode_id TEXT,
+        scene_id TEXT,
+        shot_id TEXT,
+        candidate_id TEXT,
+        similarity_to_canonical REAL NOT NULL,
+        rolling_average REAL NOT NULL,
+        drift_delta REAL NOT NULL,
+        flagged_warning INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Record migration v3
+    cursor.execute("""
+    INSERT OR IGNORE INTO schema_migrations (version, applied_at)
+    VALUES (3, ?)
+    """, (datetime.utcnow().isoformat(),))
+
     conn.commit()
     conn.close()
+

@@ -16,5 +16,5 @@ Every externally sourced model, workflow, or dataset must have its license captu
 | **ACE-Step 1.5** | ACE-Step | Community / Permissive | Review required | Music beds & themes |
 | **HunyuanVideo-Foley XL** | Tencent | Custom / Tencent | Review required | Sound effects generation |
 | **MiniMax H3** | MiniMax | MiniMax Community License | Review required | Custom community terms apply |
-| **DINOv3** | Meta AI | Custom Meta License | Review required | Visual embeddings & QA |
+| **DINOv3 / DINOv2** | Meta AI | Meta DINO License | Allowed (Research & Commercial) | ViT-S/B visual embeddings & QA reranking |
 | **InsightFace Models** | InsightFace | Non-Commercial Pretrained | **RESTRICTED** | Do NOT use pretrained recognition weights by default |

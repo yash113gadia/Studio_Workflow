@@ -85,6 +85,18 @@ models:
     installed: true
     tested: false
 
+  - id: dinov2_small_qa
+    role: visual_qa_embeddings
+    source_url: "https://huggingface.co/facebook/dinov2-small"
+    local_path: "models/qa/dino/dinov2-small"
+    size_bytes: 88249960
+    sha256: "ae1e99fcefd534ed978cdeb8326f08030c96e28b7a81ffcbc98a857c84d14be1"
+    license: "meta-dino-license"
+    commercial_status: "allowed"
+    backends: ["qa_engine"]
+    installed: true
+    tested: true
+
   - id: minimax_h3_wangp_low_vram
     role: video_hero
     source_url: "https://huggingface.co/MiniMaxAI/MiniMax-H3"
@@ -96,3 +108,4 @@ models:
     backends: ["wangp"]
     installed: false
     tested: false
+

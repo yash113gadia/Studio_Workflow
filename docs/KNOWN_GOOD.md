@@ -61,6 +61,12 @@ This document pins exact known-good commits, SHAs, model hashes, Python versions
   - Season Planning Architecture: Complete 5-episode mini-season and 45-episode full season map generation with episodic cliffhangers (`revelation`, `peril`, `betrayal`, `dilemma`) designed for vertical retention.
   - Adaptation Provenance: Every adaptation decision tagged as either citeable `CANON_SOURCE` (referencing deterministic chunk IDs) or `ADAPTATION_BRIDGE` original material.
 
-
-
-
+- **Profile `phase-08-visual-qa-v1`**:
+  - Test Suite: `tests/test_phase_08_visual_qa.py` (5 passed). Full regression: 31/31 passed across all phases.
+  - Model Weights & Licensing: Meta DINO model (`models/qa/dino/dinov2-small`, 88,249,960 bytes, SHA256 `ae1e99fcefd534ed978cdeb8326f08030c96e28b7a81ffcbc98a857c84d14be1`) installed and verified with license captured in `docs/LICENSES_AND_MODEL_TERMS.md` and `configs/models.yaml`.
+  - Feature Extractor Architecture: Subprocess extractor runner `scripts/visual_qa_extractor.py` executing inside `comfy_env` (PyTorch 2.14.0+cu126 + Transformers 5.17.0) to keep `studio_core_env` cleanly isolated without PyTorch/CUDA dependency bloat. Produces 384-dimensional unit-normalized dense & CLS representations on CPU (<40ms) without consuming GPU VRAM.
+  - Canonical Reference Registry: Database caching of Tier 0 canonical identity and location embeddings in `visual_embeddings` table.
+  - Three-Candidate Reranking Policy: Evaluates 3 test candidates across whole-subject similarity, identity crop similarity, location similarity, and style similarity. Normalizes components and computes calibrated composite score. Automatically tags top passing candidate as `ACCEPTED` (winner), passing alternatives as `ALTERNATIVE`, and rejects sub-threshold candidates with logged reasons (`REJECT_IDENTITY_DRIFT`, `REJECT_LOW_COMPOSITE`).
+  - Fallback Ladder Trigger: Deterministically triggers `TRIGGER_CINEMATIC_FALLBACK_LADDER_ATTEMPT_2` when all 3 candidates fail acceptance thresholds.
+  - Longitudinal Drift Tracker: Tracks character identity similarity to Tier 0 across sequential episodes and scenes in `qa_drift_logs`. Computes rolling moving average and raises `CHARACTER_IDENTITY_DRIFT_ALERT` when drift delta exceeds 0.15.
+  - REST API Router: Full REST API exposed at `/api/v1/qa/` registered in `app/main.py` for embedding extraction, canonical registration, candidate reranking, and drift retrieval.
