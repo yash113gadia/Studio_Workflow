@@ -1,0 +1,144 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-09-19T17:50:00Z",
+  "description": "Preeti Studio Sound Design & Foley Library for Action-Synchronized SFX and Fallback Bed Generation",
+  "categories": [
+    "footsteps",
+    "doors",
+    "fabric",
+    "impact",
+    "ambience"
+  ],
+  "cues": [
+    {
+      "cue_id": "SFX_FOOTSTEPS_WOOD_V001",
+      "name": "Footsteps on Wood",
+      "category": "footsteps",
+      "surface": "wood",
+      "default_duration_s": 2.5,
+      "audio_file": "footsteps_wood.wav",
+      "description": "Natural shoe footsteps walking on solid hardwood floor with moderate cadence.",
+      "tags": ["footsteps", "wood", "interior", "walking", "shoes"]
+    },
+    {
+      "cue_id": "SFX_FOOTSTEPS_CONCRETE_V001",
+      "name": "Footsteps on Concrete",
+      "category": "footsteps",
+      "surface": "concrete",
+      "default_duration_s": 2.5,
+      "audio_file": "footsteps_concrete.wav",
+      "description": "Firm heel strikes on textured concrete pavement or exterior hallway.",
+      "tags": ["footsteps", "concrete", "exterior", "hallway", "pavement"]
+    },
+    {
+      "cue_id": "SFX_FOOTSTEPS_CARPET_V001",
+      "name": "Footsteps on Carpet",
+      "category": "footsteps",
+      "surface": "carpet",
+      "default_duration_s": 2.5,
+      "audio_file": "footsteps_carpet.wav",
+      "description": "Muffled, soft steps on plush carpeted hotel or apartment floor.",
+      "tags": ["footsteps", "carpet", "muffled", "soft", "interior"]
+    },
+    {
+      "cue_id": "SFX_DOOR_OPEN_CREAK_V001",
+      "name": "Door Open with Creak",
+      "category": "doors",
+      "surface": "wood",
+      "default_duration_s": 1.8,
+      "audio_file": "door_open_creak.wav",
+      "description": "Classic wooden door latch turn followed by gentle hinge creak.",
+      "tags": ["door", "open", "creak", "wood", "latch"]
+    },
+    {
+      "cue_id": "SFX_DOOR_CLOSE_SOFT_V001",
+      "name": "Door Close Soft",
+      "category": "doors",
+      "surface": "wood",
+      "default_duration_s": 1.2,
+      "audio_file": "door_close_soft.wav",
+      "description": "Interior room door swinging shut and softly latching into doorframe.",
+      "tags": ["door", "close", "shut", "interior", "latch"]
+    },
+    {
+      "cue_id": "SFX_DOOR_SLAM_V001",
+      "name": "Door Slam",
+      "category": "doors",
+      "surface": "heavy_wood",
+      "default_duration_s": 1.5,
+      "audio_file": "door_slam.wav",
+      "description": "Loud angry door slam with resonant reverberation and heavy rattle.",
+      "tags": ["door", "slam", "dramatic", "angry", "impact"]
+    },
+    {
+      "cue_id": "SFX_FABRIC_RUSTLE_LIGHT_V001",
+      "name": "Fabric Rustle Light",
+      "category": "fabric",
+      "surface": "cotton",
+      "default_duration_s": 1.0,
+      "audio_file": "fabric_rustle_light.wav",
+      "description": "Light shirt fabric movement accompanying character gestures and arm shifts.",
+      "tags": ["fabric", "cloth", "rustle", "movement", "gesture"]
+    },
+    {
+      "cue_id": "SFX_FABRIC_COAT_HEAVY_V001",
+      "name": "Fabric Coat Heavy",
+      "category": "fabric",
+      "surface": "leather_wool",
+      "default_duration_s": 1.4,
+      "audio_file": "fabric_coat_heavy.wav",
+      "description": "Heavy jacket or coat rustle during sudden turn or body movement.",
+      "tags": ["fabric", "coat", "heavy", "rustle", "turn"]
+    },
+    {
+      "cue_id": "SFX_IMPACT_BODY_FALL_V001",
+      "name": "Body Fall Impact",
+      "category": "impact",
+      "surface": "floor",
+      "default_duration_s": 1.6,
+      "audio_file": "impact_body_fall.wav",
+      "description": "Heavy thud of body collapsing onto floor with secondary fabric settling.",
+      "tags": ["impact", "body", "fall", "collapse", "thud"]
+    },
+    {
+      "cue_id": "SFX_IMPACT_PUNCH_V001",
+      "name": "Punch Impact",
+      "category": "impact",
+      "surface": "flesh",
+      "default_duration_s": 0.8,
+      "audio_file": "impact_punch.wav",
+      "description": "Direct combat punch impact with sharp transient snap and low-end punch weight.",
+      "tags": ["impact", "punch", "fight", "hit", "combat"]
+    },
+    {
+      "cue_id": "SFX_IMPACT_TABLE_THUMP_V001",
+      "name": "Table Thump Impact",
+      "category": "impact",
+      "surface": "wood_desk",
+      "default_duration_s": 1.1,
+      "audio_file": "impact_table_thump.wav",
+      "description": "Fist or palm slammed down on wooden conference desk in frustration.",
+      "tags": ["impact", "table", "thump", "fist", "dramatic"]
+    },
+    {
+      "cue_id": "SFX_AMBIENCE_ROOM_TONE_V001",
+      "name": "Interior Room Tone",
+      "category": "ambience",
+      "surface": "interior",
+      "default_duration_s": 5.0,
+      "audio_file": "ambience_room_tone.wav",
+      "description": "Quiet residential room tone with subtle HVAC hum and acoustic warmth.",
+      "tags": ["ambience", "room_tone", "interior", "quiet", "background"]
+    },
+    {
+      "cue_id": "SFX_AMBIENCE_RAIN_WINDOW_V001",
+      "name": "Rain on Window Ambience",
+      "category": "ambience",
+      "surface": "glass",
+      "default_duration_s": 5.0,
+      "audio_file": "ambience_rain_window.wav",
+      "description": "Steady rain drops trickling on window glass with distant ambient thunder rumbling.",
+      "tags": ["ambience", "rain", "window", "weather", "mood"]
+    }
+  ]
+}

@@ -197,37 +197,42 @@ class AIStudioUI {
                 alert("Failed to queue angles: " + res.statusText);
             }
         } catch (e) {
-    async triggerSpecialistEdit(sourceAssetId, action, instruction) {
-        if (!this.activeProject) {
-            alert("Select or create an active project first.");
-            return;
+            alert("Error: " + e.message);
         }
-        if (!sourceAssetId) {
-            alert("Please select a source canonical asset to edit.");
-            return;
-        }
+    }
+
+    async triggerH3Shot(keyframeId, prompt, durationS, candidates) {
+        if (!this.activeProject) return;
         try {
-            const res = await fetch(`${STUDIO_API}/editor/edit`, {
+            const res = await fetch(`${STUDIO_API}/video/h3-execute?mock=true`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     project_id: this.activeProject.id,
-                    source_asset_id: sourceAssetId,
-                    action: action,
-                    instruction: instruction || null,
-                    seed: Math.floor(Math.random() * 900000) + 100000
+                    keyframe_asset_id: keyframeId,
+                    prompt: prompt,
+                    duration_s: parseFloat(durationS) || 5.0,
+                    aspect: "9:16",
+                    width: 480,
+                    height: 864,
+                    candidates: parseInt(candidates) || 1,
+                    seed: 42,
+                    denoising_priority: "lower_vram",
+                    text_encoder_variant: "gguf_q2_k",
+                    video_vae_variant: "fp8mix",
+                    reference_mode: false
                 })
             });
             if (res.ok) {
-                const data = await res.json();
-                alert(`Queued Qwen-Image-Edit [${action}] for ${sourceAssetId}! Job: ${data.edit_job_id}`);
+                const shot = await res.json();
+                alert(`Generated ~5s vertical shot via WanGP H3! Asset: ${shot.output_video_asset_id}`);
                 await this.refresh();
             } else {
                 const err = await res.json();
-                alert(`Edit request failed: ${err.detail || res.statusText}`);
+                alert(`Shot generation failed: ${err.detail || res.statusText}`);
             }
         } catch (e) {
-            alert("Error queuing edit: " + e.message);
+            alert("Error generating H3 shot: " + e.message);
         }
     }
 
@@ -245,6 +250,8 @@ class AIStudioUI {
         let canonicalRefs = this.assets.filter(a => a.kind === "canonical_ref");
         let castingCandidates = this.assets.filter(a => a.kind === "casting_candidate");
         let angleAssets = this.assets.filter(a => a.kind === "canonical_angle");
+        let videoShots = this.assets.filter(a => a.kind === "video_shot");
+        let allKeyframes = this.assets.filter(a => a.kind === "canonical_ref" || a.kind === "keyframe" || a.kind === "canonical_angle");
 
         let jobsRows = this.jobs.map(j => `
             <tr>
@@ -338,31 +345,54 @@ class AIStudioUI {
                 ` : ''}
             </div>
 
-            <!-- Phase 5: Specialist Still Editor Card (Qwen-Image-Edit-2511 INT8) -->
+            <!-- Phase 10: MiniMax H3 Short-Shot Card -->
             <div class="studio-card">
-                <div class="studio-card-title">✨ Specialist Still Editor (Qwen-Image-Edit-2511 INT8)</div>
-                <div style="font-size: 11px; color: #888; margin-bottom: 8px;">Targeted repair, outfit swap, prop correction & material swapping.</div>
-                
-                <label style="font-size: 11px; color: #aaa;">Source Character / Asset:</label>
-                <select class="studio-input" id="studio-edit-source-select" style="margin-top: 2px;">
-                    ${canonicalRefs.length === 0 ? '<option value="">No canonical assets available</option>' :
-                        canonicalRefs.map(c => `<option value="${c.id}">${c.id} (${c.metadata_json.character_name || 'Character'})</option>`).join("")
+                <div class="studio-card-title">🎥 Generative Short-Shot (WanGP MiniMax H3)</div>
+                <div style="font-size: 11px; color: #888; margin-bottom: 6px;">Profile: 480x864 Vertical (9:16) | ~5s | RTX 3070 8GB Low-VRAM</div>
+                <label style="font-size: 11px; color: #aaa;">Source Keyframe:</label>
+                <select class="studio-input" id="studio-h3-keyframe-select">
+                    ${allKeyframes.length === 0 ? '<option value="">No Approved Keyframes Available</option>' :
+                        allKeyframes.map(k => `<option value="${k.id}">${k.id} (${k.kind})</option>`).join("")
                     }
                 </select>
+                <label style="font-size: 11px; color: #aaa;">Shot Action Prompt:</label>
+                <textarea class="studio-input" id="studio-h3-prompt" rows="2" placeholder="Cinematic vertical shot, Maya steps out of the shadows, looks around anxiously in the foggy alleyway, subtle dramatic lighting..."></textarea>
+                <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 10px; color: #888;">Duration (sec):</label>
+                        <select class="studio-input" id="studio-h3-duration" style="margin-bottom: 0;">
+                            <option value="4.0">4.0s (96 frames)</option>
+                            <option value="5.0" selected>5.0s (120 frames)</option>
+                            <option value="6.0">6.0s (144 frames)</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 10px; color: #888;">Candidates:</label>
+                        <select class="studio-input" id="studio-h3-candidates" style="margin-bottom: 0;">
+                            <option value="1" selected>1 (Fast Baseline)</option>
+                            <option value="3">3 (Hero Shots)</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="studio-btn" id="studio-h3-gen-btn" style="background: #e65100; margin-top: 4px;">⚡ Generate 5s Vertical Shot (WanGP)</button>
+            </div>
 
-                <label style="font-size: 11px; color: #aaa;">Specialist Action:</label>
-                <select class="studio-input" id="studio-edit-action-select" style="margin-top: 2px;">
-                    <option value="preserve_identity_change_outfit">Preserve Identity & Change Outfit</option>
-                    <option value="remove_unwanted_object">Remove Unwanted Object / Artifact</option>
-                    <option value="repair_background">Repair Background Backdrop</option>
-                    <option value="derive_angle">Derive Controlled Angle Perspective</option>
-                    <option value="correct_prop">Correct / Replace Held Prop</option>
-                    <option value="material_swap">Material & Surface Swap</option>
-                </select>
-
-                <label style="font-size: 11px; color: #aaa;">Custom Instruction (Optional):</label>
-                <textarea class="studio-input" id="studio-edit-instruction" rows="2" placeholder="Leave blank to use action default, or provide custom direction..."></textarea>
-                <button class="studio-btn" id="studio-trigger-edit-btn" style="background: #8b5cf6;">⚡ Run Specialist Edit</button>
+            <!-- Studio Review & Video Playback Card -->
+            <div class="studio-card">
+                <div class="studio-card-title">🎞️ Studio Review & Rendered Shots</div>
+                ${videoShots.length === 0 ? '<div style="font-size: 11px; color: #666;">No video shots generated yet.</div>' :
+                    videoShots.map(v => `
+                        <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 8px; margin-bottom: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: bold; color: #ff9800; font-size: 11px;">${v.id}</span>
+                                <span class="studio-badge" style="background: #333; color: #aaa;">480x864</span>
+                            </div>
+                            <div style="font-size: 11px; color: #ccc; margin-top: 4px;">${v.name}</div>
+                            <div style="font-size: 10px; color: #888; margin-top: 2px;">Duration: ${v.metadata_json.duration_s || 5}s | VRAM: ~5.4 GB</div>
+                            <div style="margin-top: 4px; font-size: 10px; color: #00aa66;">✓ Returned to Studio Review Page</div>
+                        </div>
+                    `).join("")
+                }
             </div>
 
             <!-- Jobs & Queue Card -->
@@ -427,16 +457,19 @@ class AIStudioUI {
             };
         });
 
-        const triggerEditBtn = this.panel.querySelector("#studio-trigger-edit-btn");
-        if (triggerEditBtn) {
-            triggerEditBtn.onclick = () => {
-                const sourceSelect = this.panel.querySelector("#studio-edit-source-select");
-                const actionSelect = this.panel.querySelector("#studio-edit-action-select");
-                const instructionText = this.panel.querySelector("#studio-edit-instruction");
-                const sourceId = sourceSelect ? sourceSelect.value : null;
-                const action = actionSelect ? actionSelect.value : "preserve_identity_change_outfit";
-                const instruction = instructionText ? instructionText.value.trim() : "";
-                this.triggerSpecialistEdit(sourceId, action, instruction);
+        const h3GenBtn = this.panel.querySelector("#studio-h3-gen-btn");
+        if (h3GenBtn) {
+            h3GenBtn.onclick = () => {
+                const kSelect = this.panel.querySelector("#studio-h3-keyframe-select");
+                const keyframeId = kSelect ? kSelect.value : "";
+                if (!keyframeId) {
+                    alert("Please select an approved keyframe first.");
+                    return;
+                }
+                const prompt = (this.panel.querySelector("#studio-h3-prompt").value || "Maya walks forward in dramatic cinematic lighting").trim();
+                const duration = this.panel.querySelector("#studio-h3-duration").value || "5.0";
+                const candidates = this.panel.querySelector("#studio-h3-candidates").value || "1";
+                this.triggerH3Shot(keyframeId, prompt, duration, candidates);
             };
         }
     }

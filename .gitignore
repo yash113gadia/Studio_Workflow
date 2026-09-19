@@ -23,9 +23,8 @@ logs/
 *.onnx
 
 # Render intermediates & outputs
-projects/*/exports/
-projects/*/cache/
-projects/*/backups/
+projects/*/
+services/wangp/Wan2GP/
 *.mp4
 *.wav
 *.png

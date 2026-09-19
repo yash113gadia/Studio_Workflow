@@ -38,6 +38,7 @@ class AssetKind(str, Enum):
     LOCATION = "location"
     KEYFRAME = "keyframe"
     EDITED_ASSET = "edited_asset"
+    VIDEO_SHOT = "video_shot"
     THUMBNAIL = "thumbnail"
 
 
@@ -171,3 +172,34 @@ class SystemHealthResponse(BaseModel):
     gpu_lease_status: str
     gpu_lease_owner: Optional[str] = None
     free_disk_gb: float
+
+
+class H3ShotRequest(BaseModel):
+    project_id: str
+    keyframe_asset_id: str
+    prompt: str
+    duration_s: float = Field(default=5.0, ge=3.0, le=8.0)
+    aspect: str = "9:16"
+    width: int = 480
+    height: int = 864
+    candidates: int = Field(default=1, ge=1, le=3)
+    seed: int = 42
+    denoising_priority: str = "lower_vram"
+    text_encoder_variant: str = "gguf_q2_k"
+    video_vae_variant: str = "fp8mix"
+    reference_mode: bool = False
+    shot_id: Optional[str] = None
+    episode_id: Optional[str] = None
+
+
+class H3ShotResponse(BaseModel):
+    job_id: str
+    project_id: str
+    status: str
+    output_video_asset_id: Optional[str] = None
+    output_path: Optional[str] = None
+    duration_s: float
+    resolution: str
+    timings_ms: Dict[str, Any] = Field(default_factory=dict)
+    vram_peak_mb: Optional[float] = None
+    provenance_json: Dict[str, Any] = Field(default_factory=dict)

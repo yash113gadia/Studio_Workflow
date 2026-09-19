@@ -13,6 +13,16 @@ from app.api.v1.editor import router as editor_router
 from app.api.v1.continuity import router as continuity_router
 from app.api.v1.novel import router as novel_router
 from app.api.v1.qa import router as qa_router
+from app.api.v1.video import router as video_router
+from app.api.v1.motion import router as motion_router
+from app.api.v1.audio import router as audio_router
+from app.api.v1.post import router as post_router
+from app.api.v1.upscaler import router as upscaler_router
+from app.api.v1.thumbnails import router as thumbnails_router
+from app.api.v1.creator import router as creator_router
+from app.api.v1.series import router as series_router
+from app.api.v1.sandbox import router as sandbox_router
+
 
 
 
@@ -51,6 +61,15 @@ app.include_router(editor_router, prefix="/api/v1")
 app.include_router(continuity_router, prefix="/api/v1")
 app.include_router(novel_router, prefix="/api/v1")
 app.include_router(qa_router, prefix="/api/v1")
+app.include_router(video_router, prefix="/api/v1")
+app.include_router(motion_router, prefix="/api/v1")
+app.include_router(audio_router, prefix="/api/v1")
+app.include_router(post_router, prefix="/api/v1")
+app.include_router(upscaler_router, prefix="/api/v1")
+app.include_router(thumbnails_router, prefix="/api/v1")
+app.include_router(creator_router, prefix="/api/v1")
+app.include_router(series_router, prefix="/api/v1")
+app.include_router(sandbox_router, prefix="/api/v1")
 
 
 

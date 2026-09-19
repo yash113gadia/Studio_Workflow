@@ -18,3 +18,4 @@ Every externally sourced model, workflow, or dataset must have its license captu
 | **MiniMax H3** | MiniMax | MiniMax Community License | Review required | Custom community terms apply |
 | **DINOv3 / DINOv2** | Meta AI | Meta DINO License | Allowed (Research & Commercial) | ViT-S/B visual embeddings & QA reranking |
 | **InsightFace Models** | InsightFace | Non-Commercial Pretrained | **RESTRICTED** | Do NOT use pretrained recognition weights by default |
+| **WanGP / Wan2GP** | DeepBeepMeep | WanGP Community License 2.0 | Allowed (Free commercial output with credit) | Backend heavy worker runtime |

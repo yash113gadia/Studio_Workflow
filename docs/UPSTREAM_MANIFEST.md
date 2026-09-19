@@ -84,5 +84,50 @@ Every borrowed workflow, repository, and external asset must be recorded with ex
     ram_gb: 16
   result: pending_benchmark
   notes: Specialist image editor for identity-preserving outfit swap, object removal, background repair, and prop correction.
+
+- workflow_id: video_minimax_h3_short_shot
+  source_kind: wangp_low_vram
+  source_url: https://github.com/deepbeepmeep/Wan2GP.git
+  source_commit: bfaff285463ef6124c2357136e8d36c6c93c0fb2
+  source_file: models/minimax_h3/minimax_h3_handler.py
+  local_upstream_copy: services/wangp/Wan2GP/models/minimax_h3/minimax_h3_handler.py
+  sha256: pinned_upstream_v13.10
+  api_variant: app/core/wangp_adapter.py
+  license_status: approved (minimax-community-license)
+  models:
+    - filename: qwen3vl-32B-MiniMax-H3-Q2_K.gguf
+      source: DeepBeepMeep/MiniMax-H3
+      role: Text encoder low-RAM/low-VRAM quantization
+    - filename: minimax_h3_video_vae_fp8mix.safetensors
+      source: DeepBeepMeep/MiniMax-H3
+      role: Video VAE FP8 mixed precision
+    - filename: minimax_h3_lightx2v_fl2v_turbo_4step_alpha16_v0.1.safetensors
+      source: DeepBeepMeep/MiniMax-H3
+      role: LightX2V 4-step Turbo LoRA acceleration
+  tested_on:
+    gpu: RTX 3070 Laptop 8GB
+    ram_gb: 16
+  result: in_progress
+  notes: Heavy low-VRAM 480x864 vertical generative video shot profile via WanGP headless engine.
+```
+
+---
+
+## Repositories Registry
+
+```yaml
+- repo_id: deepbeepmeep/Wan2GP
+  upstream_url: https://github.com/deepbeepmeep/Wan2GP.git
+  pinned_commit: bfaff285463ef6124c2357136e8d36c6c93c0fb2
+  local_path: services/wangp/Wan2GP
+  license_status: approved (wangp-community-license-2.0)
+  role: Heavy low-VRAM backend for MiniMax H3, SCAIL-2, and video generation
+
+- repo_id: Tencent-Hunyuan/HunyuanVideo-Foley
+  upstream_url: https://github.com/Tencent-Hunyuan/HunyuanVideo-Foley
+  pinned_commit: official_release_v1.0
+  local_path: app/core/audio/foley_engine.py
+  license_status: approved (tencent-hunyuan-community-license)
+  role: Action-synchronized Foley and SFX generation (XL + offload profile)
 ```
 

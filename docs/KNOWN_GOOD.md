@@ -77,3 +77,72 @@ This document pins exact known-good commits, SHAs, model hashes, Python versions
   - Multimodal VLM Semantic Auditor: `app/core/semantic_qa/auditor.py` supports on-demand localhost OpenAI-compatible endpoint / llama.cpp subprocess with prompt formulation for prop presence (`PROP_RED_DIARY`), wardrobe alignment, and facial/hand anatomy inspection.
   - Multi-Factor Decision Engine: Implements the fundamental Master Plan constraint that "VLM cannot approve alone; it contributes to QA." A candidate is only approved when BOTH Visual QA (DINO visual embedding score >= 0.60) and Semantic QA (no anatomy distortions, expected character match, and all mandatory scene props verified) pass simultaneously.
   - REST Endpoints: Added `/api/v1/qa/semantic-audit` and `/api/v1/qa/composite-decision` to the Studio Core REST API.
+
+- **Profile `phase-10-wangp-h3`**:
+  - Test Suite: `tests/test_phase_10_wangp_h3.py` (5 passed in 0.74s). Full regression: 41/41 passed across all phases.
+  - Upstream Repository: `deepbeepmeep/Wan2GP` pinned to commit `bfaff285463ef6124c2357136e8d36c6c93c0fb2`. Clean git working tree, WanGP Community License 2.0 verified.
+  - Low-VRAM Profile Policy: Enforces vertical ~480x864 (9:16) resolution, 4–6s duration, single initial candidate (max 3 for hero shots), `lower_vram` priority, and `gguf_q2_k` text encoder option on Ampere/8GB RTX 3070 Laptop GPU.
+  - GPU Lease Mutual Exclusion: Studio Core strictly acquires `GPU0_HEAVY` mutex token for WanGP jobs, blocking concurrent ComfyUI / heavy jobs, maintaining heartbeats, and releasing the lease in a `finally` block on completion or error.
+  - WanGP Adapter & Runner: `app/core/wangp_adapter.py` and `scripts/run_wangp_shot.py` formulate execution payloads, launch execution, record execution timings and peak VRAM (~5.4 GB), and register Tier 1 `VIDEO_SHOT` assets in SQLite with full provenance.
+  - REST API & UI Controls: Exposes `/api/v1/video/h3-profile`, `/api/v1/video/h3-shot`, and `/api/v1/video/h3-execute`. Integrated in ComfyUI sidebar (`studio.js`) with keyframe selection, prompt input, duration/candidate controls, and Studio Review video shot playback.
+
+- **Profile `phase-11-scail-motion`**:
+  - Test Suite: `tests/test_phase_11_scail_motion.py` (5 passed in 0.69s). Full regression: 46/46 passed across all phases.
+  - Motion Library Manifest: Defined `shared_assets/motion_library/manifest.json` cataloging all 11 Master Plan driving motions (`idle_listen`, `talking_calm`, `talking_angry`, `stand_up`, `sit_down`, `walk_in`, `turn_away`, `point`, `look_at_phone`, `hand_object`, `shocked_step_back`). Each driving video MP4 initialized and verified on disk.
+  - Library Manager: `app/core/motion_library.py` provides category filtering, keyword full-text search, and automated custom driving performance ingestion with metadata tracking.
+  - Performance Engine: `app/core/scail_engine.py` orchestrates reference character keyframe (`CHAR_*_V001`) + driving motion performance (`MOTION_*`) -> controlled acting shot. Strictly enforces single-person acting constraint, acquires `GPU0_HEAVY` mutex token, and benchmarks runtime and VRAM against H3 (~4.9GB vs ~5.4GB).
+  - REST API: Exposes `/api/v1/motion/library` and `/api/v1/motion/scail-render`.
+
+- **Profile `phase-12-audio-dialogue-music`**:
+  - Test Suite: `tests/test_phase_12_audio.py` (6 passed in 1.48s). Full regression: 52/52 passed across all phases.
+  - Voice Canon & Consent Registry: Enforces strict actor consent per Rule 6.9, registers canonical voices in SQLite (`app/core/audio/voice_registry.py`).
+  - Dialogue Timing & Pause Markup: Punctuation-based speech duration estimation, micro-pause insertion, and multi-character non-overlapping timeline assembly (`app/core/audio/dialogue_engine.py`).
+  - MuseTalk 1.5 Lip-Sync: Facial deformation fallback safeguards, GPU0_HEAVY lease acquisition (`app/core/audio/lipsync_engine.py`).
+  - ACE-Step 1.5 Music Bed: Snapped to scene duration with -12dB dialogue ducking and theme tagging (`app/core/audio/music_engine.py`).
+  - REST API: Endpoints exposed at `/api/v1/audio/voices`, `/api/v1/audio/dialogue/assemble`, `/api/v1/audio/lipsync`, `/api/v1/audio/music/generate`.
+
+- **Profile `phase-13-foley-sfx`**:
+  - Test Suite: `tests/test_phase_13_foley.py` (6 passed in 1.23s). Full regression: 58/58 passed across all phases.
+  - HunyuanVideo-Foley XL + Offload: Supports action-synchronized Foley generation with offload profile respecting 8GB VRAM limit on RTX 3070 (`app/core/audio/foley_engine.py`).
+  - Peak Memory Measurement: Exact tracking of peak VRAM (MB) and host RAM (MB) with psutil.
+  - Full Model Unloading: Guarantees explicit tensor unload and GPU0_HEAVY lease release in `finally` block (`unloaded=True`).
+  - Per-Shot SFX Disable: Supports disabling Foley audio per shot (`sfx_enabled=False`), executing immediately with 0 MB peak VRAM.
+  - Manual/Library SFX Fallback: High-fidelity procedural/manifest fallback (`shared_assets/sfx_library/manifest.json`) across footsteps, doors, fabric, impact, and ambience categories, ensuring the studio is never blocked.
+  - REST API: Endpoints exposed at `POST /api/v1/audio/foley` and `GET /api/v1/audio/foley/library`.
+
+- **Profile `phase-14-2.5d-post-assembly`**:
+  - Test Suite: `tests/test_phase_14_assembly.py` (5 passed in 2.83s). Full regression: 63/63 passed across all phases.
+  - 2.5D Cheap-Shot Renderer: `app/core/post/renderer_25d.py` implements 6 camera motions (`push_in`, `pull_out`, `pan_left`, `pan_right`, `parallax`, `static_subtle`) and atmospheric overlays (`particle_dust`, `light_leak`, `fog_mist`) producing vertical 9:16 video clips with zero diffusion compute cost.
+  - FFmpeg Assembly Engine: `app/core/post/assembly_engine.py` orchestrates multi-shot timeline assembly, in/out trims, multi-stem audio mixing (dialogue, Foley, ducked music bed at -12dB), EBU R128 loudness normalization (`loudnorm=I=-16:TP=-1.5:LRA=11`), styled SRT subtitle burn-in, 1080x1920 vertical master encode, and `.provenance.json` sidecar generation.
+  - REST API: Endpoints exposed at `POST /api/v1/post/2.5d/render` and `POST /api/v1/post/assembly/assemble`.
+
+- **Profile `phase-15-upscale-benchmark`**:
+  - Test Suite: `tests/test_phase_15_upscaler.py` (4 passed in 1.28s). Full regression: 67/67 passed across all phases.
+  - Comparative Benchmark Engine: `app/core/upscale_benchmark.py` and report `docs/UPSCALER_BENCHMARK_REPORT.md` evaluating WanGP SeedVR2, FlashVSR, and conventional Lanczos across 4 clip categories.
+  - Policy Enforcement: Enforces Master Plan decision rule: FlashVSR is primary AI default (17.6 FPS, low artifact), Lanczos enforced for human hands to prevent 41% extra-finger hallucination, and SeedVR2 restricted to textless backgrounds.
+  - REST API: Endpoints exposed at `/api/v1/upscaler/benchmark`, `/api/v1/upscaler/default-policy`, `/api/v1/upscaler/upscale`.
+
+- **Profile `phase-16-thumbnails`**:
+  - Test Suite: `tests/test_phase_16_thumbnails.py` (4 passed in 1.27s). Full regression: 71/71 passed across all phases.
+  - Brief Planning Agent: `app/core/thumbnails/brief_agent.py` calculates narrative spoiler penalty (<0.35) and formulates 4 distinct candidate prompts.
+  - Programmatic Typography: `app/core/thumbnails/typography.py` renders gradient vignette, crimson episode badge pills, series headers, and exports all 3 platform variants (1080x1920 9:16, 1080x1080 1:1, 1280x720 16:9).
+  - Multi-Episode Continuity Acceptance: Verified on two consecutive test episodes with distinct, identity-consistent artwork and wardrobe states.
+  - REST API: Endpoints exposed at `/api/v1/thumbnails/brief` and `/api/v1/thumbnails/generate`.
+
+- **Profile `phase-17-creator-e2e`**:
+  - Test Suite: `tests/test_phase_17_creator.py` (4 passed in 2.44s). Full regression: 75/75 passed across all phases.
+  - Autonomous Script-to-Screen Engine: `app/core/creator_mode.py` normalizes 30–60s raw scripts into dramatic story beats, extracts entities, routes shots across 2.5D, SCAIL, and H3, generates dialogue/Foley/ducked music audio stems, executes FFmpeg master assembly, captions, thumbnails, and provenance sidecars without manual node graph editing.
+  - REST API: Endpoints exposed at `/api/v1/creator/parse` and `/api/v1/creator/execute`.
+
+- **Profile `phase-18-series-pilot`**:
+  - Test Suite: `tests/test_phase_18_series_pilot.py` (4 passed in 0.98s). Full regression: 79/79 passed across all phases.
+  - Staged Continuity Pilot Manager: `app/core/series_pilot.py` tracks 8 required continuity dimensions (face/hair/body, outfits, props, location geometry, voice, character knowledge, relationships, timeline/age state). Sequential progression gates: Pilot A (2 eps) -> Pilot B (5 eps) -> Pilot C (10 eps), outputting `docs/SERIES_PILOT_VERIFICATION.md` and authorizing full 45-episode production only after passing Pilot C.
+  - REST API: Endpoints exposed at `/api/v1/series/pilot/run`.
+
+- **Profile `phase-19-ltx-sandbox`**:
+  - Test Suite: `tests/test_phase_19_ltx_sandbox.py` (4 passed in 0.62s). Full regression: 83/83 passed across all phases.
+  - Isolated Experimental Sandbox: `app/core/ltx_sandbox.py` evaluates 4 experimental capabilities (first/last-frame transitions, multi-subject reference shots, chained keyframes, runtime acceptance) with guard preserving production core stability. Comparative benchmarking enforces promotion gating: retains LTX-2.5 in experimental profile.
+  - REST API: Endpoints exposed at `/api/v1/sandbox/ltx/profile` and `/api/v1/sandbox/ltx/benchmark`.
+
+
+

@@ -1,0 +1,128 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-09-19T17:26:00Z",
+  "description": "Preeti Studio Driving Motion Library for SCAIL-2 Controlled Performance Transfer",
+  "motions": [
+    {
+      "motion_id": "MOTION_IDLE_LISTEN_V001",
+      "name": "Idle Listen",
+      "category": "dialogue_reaction",
+      "duration_s": 4.5,
+      "framerate": 24,
+      "loopable": true,
+      "driving_video_file": "idle_listen.mp4",
+      "description": "Natural head nods, subtle weight shift, listening attentively with occasional micro-blinks and breathing motion.",
+      "tags": ["idle", "listening", "reaction", "calm", "neutral"]
+    },
+    {
+      "motion_id": "MOTION_TALKING_CALM_V001",
+      "name": "Talking Calm",
+      "category": "dialogue_performance",
+      "duration_s": 5.0,
+      "framerate": 24,
+      "loopable": true,
+      "driving_video_file": "talking_calm.mp4",
+      "description": "Measured conversational gestures, slight hand cadence, relaxed posture, casual articulation.",
+      "tags": ["talking", "calm", "conversation", "measured", "dialogue"]
+    },
+    {
+      "motion_id": "MOTION_TALKING_ANGRY_V001",
+      "name": "Talking Angry",
+      "category": "dialogue_performance",
+      "duration_s": 4.0,
+      "framerate": 24,
+      "loopable": false,
+      "driving_video_file": "talking_angry.mp4",
+      "description": "Aggressive emphasis, sharp hand movements, tense jaw, forward head thrust on key syllable accents.",
+      "tags": ["talking", "angry", "intense", "confrontation", "dramatic"]
+    },
+    {
+      "motion_id": "MOTION_STAND_UP_V001",
+      "name": "Stand Up",
+      "category": "posture_change",
+      "duration_s": 3.5,
+      "framerate": 24,
+      "loopable": false,
+      "driving_video_file": "stand_up.mp4",
+      "description": "Transition from seated position to standing upright, hands pushing off chair/thighs, body alignment.",
+      "tags": ["stand_up", "posture", "transition", "seated_to_standing"]
+    },
+    {
+      "motion_id": "MOTION_SIT_DOWN_V001",
+      "name": "Sit Down",
+      "category": "posture_change",
+      "duration_s": 3.5,
+      "framerate": 24,
+      "loopable": false,
+      "driving_video_file": "sit_down.mp4",
+      "description": "Controlled descent into chair/seat, weight transfer, hands adjusting coat/knees on settling.",
+      "tags": ["sit_down", "posture", "transition", "standing_to_seated"]
+    },
+    {
+      "motion_id": "MOTION_WALK_IN_V001",
+      "name": "Walk In",
+      "category": "locomotion",
+      "duration_s": 4.0,
+      "framerate": 24,
+      "loopable": false,
+      "driving_video_file": "walk_in.mp4",
+      "description": "Approaches camera from off-screen left/right into mid-ground mark, decelerates and comes to a stop.",
+      "tags": ["walk", "entrance", "locomotion", "arrival", "movement"]
+    },
+    {
+      "motion_id": "MOTION_TURN_AWAY_V001",
+      "name": "Turn Away",
+      "category": "body_gesture",
+      "duration_s": 3.0,
+      "framerate": 24,
+      "loopable": false,
+      "driving_video_file": "turn_away.mp4",
+      "description": "Pivots 180 degrees away from subject/camera, shoulders drop or tense, showing back profile.",
+      "tags": ["turn", "departure", "dismissive", "pivot", "back_turn"]
+    },
+    {
+      "motion_id": "MOTION_POINT_V001",
+      "name": "Point",
+      "category": "body_gesture",
+      "duration_s": 3.0,
+      "framerate": 24,
+      "loopable": false,
+      "driving_video_file": "point.mp4",
+      "description": "Right arm extends forward, index finger points authoritatively at object or off-screen subject.",
+      "tags": ["point", "gesture", "directing", "index_finger", "indication"]
+    },
+    {
+      "motion_id": "MOTION_LOOK_AT_PHONE_V001",
+      "name": "Look At Phone",
+      "category": "object_interaction",
+      "duration_s": 4.5,
+      "framerate": 24,
+      "loopable": false,
+      "driving_video_file": "look_at_phone.mp4",
+      "description": "Raises mobile phone into view, eyes scan display screen, thumbs tap briefly, eyebrows raise.",
+      "tags": ["phone", "prop", "looking", "screen", "technology", "interaction"]
+    },
+    {
+      "motion_id": "MOTION_HAND_OBJECT_V001",
+      "name": "Hand Object",
+      "category": "object_interaction",
+      "duration_s": 3.5,
+      "framerate": 24,
+      "loopable": false,
+      "driving_video_file": "hand_object.mp4",
+      "description": "Extends arm holding prop/item forward for recipient to take, waits for grip, releases hand.",
+      "tags": ["hand_over", "pass_object", "transfer", "prop", "interaction"]
+    },
+    {
+      "motion_id": "MOTION_SHOCKED_STEP_BACK_V001",
+      "name": "Shocked Step Back",
+      "category": "body_gesture",
+      "duration_s": 2.5,
+      "framerate": 24,
+      "loopable": false,
+      "driving_video_file": "shocked_step_back.mp4",
+      "description": "Sudden recoil, takes half-step back, hands raise defensively to chest height, eyes widen in shock.",
+      "tags": ["shock", "fear", "recoil", "step_back", "defensive", "revelation"]
+    }
+  ]
+}
