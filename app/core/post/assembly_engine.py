@@ -118,15 +118,41 @@ class AssemblyEngine:
             audio_stems.append("music")
 
         if mock_mode:
-            # Deterministic mock generation for testing
-            with open(master_video_path, "wb") as f:
-                f.write(b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41")
-                f.write(b"PREETI_STUDIO_DETERMINISTIC_ASSEMBLY_MASTER" * 100)
-
+            # Check if ffmpeg is available to synthesize a genuine playable 1080x1920 video
             total_duration_s = sum(
                 (s.out_trim_s - s.in_trim_s) if s.out_trim_s else 4.0
                 for s in req.shots
             )
+            video_generated = False
+            try:
+                ffmpeg_exe = get_ffmpeg_path()
+                if ffmpeg_exe and (os.path.exists(ffmpeg_exe) or os.system(f"where {ffmpeg_exe} >nul 2>&1") == 0) and total_duration_s > 0:
+                    dur_str = str(max(1.0, round(total_duration_s, 2)))
+                    cmd = [
+                        "-y",
+                        "-f", "lavfi", "-i", f"color=c=0x0a0e1a:s={req.target_width}x{req.target_height}:d={dur_str}",
+                        "-f", "lavfi", "-i", f"anoisesrc=d={dur_str}:c=pink:r=44100:a=0.015",
+                        "-c:v", "libx264",
+                        "-preset", "ultrafast",
+                        "-pix_fmt", "yuv420p",
+                        "-r", str(req.fps),
+                        "-c:a", "aac",
+                        "-b:a", "128k",
+                        "-shortest",
+                        str(master_video_path),
+                    ]
+                    ret, _, _ = run_ffmpeg(cmd, timeout_s=30)
+                    if ret == 0 and master_video_path.exists() and master_video_path.stat().st_size > 1000:
+                        video_generated = True
+            except Exception:
+                video_generated = False
+
+            if not video_generated:
+                # Deterministic fallback
+                with open(master_video_path, "wb") as f:
+                    f.write(b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41")
+                    f.write(b"PREETI_STUDIO_DETERMINISTIC_ASSEMBLY_MASTER" * 100)
+
             elapsed_ms = int((time.time() - t0) * 1000)
         else:
             # Full FFmpeg pipeline execution
