@@ -13,6 +13,13 @@ from pathlib import Path
 STUDIO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(STUDIO_ROOT))
 
+# Safe Windows UTF-8 stdout
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 from app.core.creator_mode import CreatorModeEngine, CreatorScriptInput
 
 
@@ -53,7 +60,7 @@ def main():
         script_text = DEFAULT_SCRIPT
 
     print("\n" + "=" * 80)
-    print("🎬 PREETI STUDIO — AUTONOMOUS VERTICAL VIDEO GENERATION PIPELINE")
+    print("PREETI STUDIO -- AUTONOMOUS VERTICAL VIDEO GENERATION PIPELINE")
     print(f"Title:           {args.title}")
     print(f"Target Duration: {args.duration:.1f} seconds")
     print(f"Aspect Ratio:    {args.aspect} (1080x1920)")
@@ -78,12 +85,12 @@ def main():
     print("[7/7] Generating multi-platform thumbnails & cryptographic provenance sidecar...\n")
 
     # Run the autonomous engine
-    package = CreatorModeEngine.generate(input_data, mock_mode=False)
+    package = CreatorModeEngine.execute_pipeline(input_data, mock_mode=False)
 
     total_time = time.time() - t0
 
     print("=" * 80)
-    print("✨ VIDEO GENERATION COMPLETE!")
+    print("SUCCESS: VIDEO GENERATION COMPLETE!")
     print("=" * 80)
     print(f"Master Video:        {package.master_video_path}")
     print(f"Subtitles (SRT):     {package.subtitles_srt_path}")
