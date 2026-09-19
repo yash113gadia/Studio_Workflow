@@ -7,13 +7,17 @@ from app.core.visual_qa.dino_extractor import DINOExtractor
 from app.core.visual_qa.canon_registry import CanonVisualRegistry
 from app.core.visual_qa.reranker import CandidateReranker
 from app.core.visual_qa.drift_tracker import LongitudinalDriftTracker
+from app.core.semantic_qa.auditor import SemanticQAAuditor
+from app.core.semantic_qa.schema import SemanticAuditRequest, CompositeQADecision, SemanticQAResponse
 
-router = APIRouter(prefix="/qa", tags=["Visual QA & Candidate Reranking"])
+router = APIRouter(prefix="/qa", tags=["Visual QA & Semantic QA"])
 
 extractor = DINOExtractor()
 registry = CanonVisualRegistry(extractor=extractor)
 reranker = CandidateReranker(extractor=extractor)
 drift_tracker = LongitudinalDriftTracker()
+semantic_auditor = SemanticQAAuditor()
+
 
 class ExtractEmbeddingRequest(BaseModel):
     image_path: str
@@ -130,3 +134,35 @@ def get_shot_evaluations_endpoint(shot_id: str):
         evals.append(d)
 
     return {"shot_id": shot_id, "evaluations": evals}
+
+class CompositeDecisionRequest(BaseModel):
+    candidate_id: str
+    visual_eval: dict
+    semantic_eval: SemanticQAResponse
+    min_visual_score: float = 0.60
+
+@router.post("/semantic-audit", response_model=SemanticQAResponse)
+def semantic_audit_endpoint(req: SemanticAuditRequest):
+    try:
+        return semantic_auditor.audit_image(
+            image_path=req.image_path,
+            expected_character=req.expected_character_name,
+            expected_wardrobe=req.expected_wardrobe,
+            expected_location=req.expected_location,
+            required_props=req.required_props,
+            expected_injury_state=req.expected_injury_state
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/composite-decision", response_model=CompositeQADecision)
+def composite_decision_endpoint(req: CompositeDecisionRequest):
+    try:
+        return semantic_auditor.evaluate_composite_decision(
+            candidate_id=req.candidate_id,
+            visual_eval=req.visual_eval,
+            semantic_eval=req.semantic_eval,
+            min_visual_score=req.min_visual_score
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

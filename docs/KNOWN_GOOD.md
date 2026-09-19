@@ -70,3 +70,10 @@ This document pins exact known-good commits, SHAs, model hashes, Python versions
   - Fallback Ladder Trigger: Deterministically triggers `TRIGGER_CINEMATIC_FALLBACK_LADDER_ATTEMPT_2` when all 3 candidates fail acceptance thresholds.
   - Longitudinal Drift Tracker: Tracks character identity similarity to Tier 0 across sequential episodes and scenes in `qa_drift_logs`. Computes rolling moving average and raises `CHARACTER_IDENTITY_DRIFT_ALERT` when drift delta exceeds 0.15.
   - REST API Router: Full REST API exposed at `/api/v1/qa/` registered in `app/main.py` for embedding extraction, canonical registration, candidate reranking, and drift retrieval.
+
+- **Profile `phase-09-semantic-qa`**:
+  - Test Suite: `tests/test_phase_09_semantic_qa.py` (5 passed). Full regression: 36/36 passed across all phases.
+  - Strict Schema Enforcement: Pydantic models in `app/core/semantic_qa/schema.py` enforcing exact Master Plan JSON schema (`characters_visible`, `expected_character_match`, `outfit_match`, `location_match`, `required_props`, `anatomy_warning`, `continuity_warnings`, `confidence`).
+  - Multimodal VLM Semantic Auditor: `app/core/semantic_qa/auditor.py` supports on-demand localhost OpenAI-compatible endpoint / llama.cpp subprocess with prompt formulation for prop presence (`PROP_RED_DIARY`), wardrobe alignment, and facial/hand anatomy inspection.
+  - Multi-Factor Decision Engine: Implements the fundamental Master Plan constraint that "VLM cannot approve alone; it contributes to QA." A candidate is only approved when BOTH Visual QA (DINO visual embedding score >= 0.60) and Semantic QA (no anatomy distortions, expected character match, and all mandatory scene props verified) pass simultaneously.
+  - REST Endpoints: Added `/api/v1/qa/semantic-audit` and `/api/v1/qa/composite-decision` to the Studio Core REST API.
