@@ -56,5 +56,33 @@ Every borrowed workflow, repository, and external asset must be recorded with ex
     ram_gb: 16
   result: pass
   notes: Reference conditioning character keyframe derivation (5 canonical angles) & outfit variation pipeline.
+
+- workflow_id: image_qwen_image_edit_2511_int8
+  source_kind: comfy_official
+  source_url: https://github.com/Comfy-Org/workflow_templates
+  source_commit: pinned_core_v0.0.0
+  source_file: templates/image_qwen_image_edit_2511_int8.json
+  local_upstream_copy: workflows/upstream/comfy_official/image_qwen_image_edit_2511_int8.json
+  sha256: f69153d857a3e7ad374c4b79775fa2d8d99361135806a5ecf7106f2e41cd2336
+  api_variant: workflows/api_format/qwen_edit_outfit_v001.json
+  license_status: approved (apache-2.0)
+  models:
+    - filename: qwen_image_edit_2511_int8_convrot.safetensors
+      source: Comfy-Org/Qwen-Image-Edit_ComfyUI
+      sha256: 11b5af5ac601821d73930c84846c9a158e67177356daf927ce1c8d10f3963829
+    - filename: qwen_2.5_vl_7b_fp8_scaled.safetensors
+      source: Comfy-Org/HunyuanVideo_1.5_repackaged
+      sha256: cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4
+    - filename: qwen_image_vae.safetensors
+      source: Comfy-Org/Qwen-Image_ComfyUI
+      sha256: a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f
+    - filename: Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
+      source: lightx2v/Qwen-Image-Edit-2511-Lightning
+      sha256: 22226e8d05d354bb356627d428809f5afd7819399b077238a2b70a82883a904f
+  tested_on:
+    gpu: RTX 3070 Laptop 8GB
+    ram_gb: 16
+  result: pending_benchmark
+  notes: Specialist image editor for identity-preserving outfit swap, object removal, background repair, and prop correction.
 ```
 

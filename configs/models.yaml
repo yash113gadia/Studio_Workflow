@@ -37,16 +37,52 @@ models:
     tested: true
 
 
-  - id: qwen_image_edit_2511_int8
-    role: image_specialist_edit
-    source_url: "https://huggingface.co/Qwen/Qwen-Image-Edit-2511"
-    local_path: "models/image/qwen_image_edit_2511_int8.safetensors"
-    size_bytes: 3500000000
-    sha256: ""
+  - id: qwen_image_edit_2511_int8_convrot
+    role: image_specialist_diffusion
+    source_url: "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2511_int8_convrot.safetensors"
+    local_path: "models/image/diffusion_models/qwen_image_edit_2511_int8_convrot.safetensors"
+    size_bytes: 20499083824
+    sha256: "11b5af5ac601821d73930c84846c9a158e67177356daf927ce1c8d10f3963829"
     license: "apache-2.0"
     commercial_status: "allowed"
     backends: ["comfyui"]
     installed: false
+    tested: false
+
+  - id: qwen_2.5_vl_7b_fp8_scaled
+    role: image_specialist_text_encoder
+    source_url: "https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+    local_path: "models/image/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+    size_bytes: 9384670680
+    sha256: "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4"
+    license: "apache-2.0"
+    commercial_status: "allowed"
+    backends: ["comfyui"]
+    installed: false
+    tested: false
+
+  - id: qwen_image_vae
+    role: image_specialist_vae
+    source_url: "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors"
+    local_path: "models/image/vae/qwen_image_vae.safetensors"
+    size_bytes: 253806246
+    sha256: "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f"
+    license: "apache-2.0"
+    commercial_status: "allowed"
+    backends: ["comfyui"]
+    installed: true
+    tested: false
+
+  - id: qwen_image_edit_2511_lightning_lora
+    role: image_specialist_lora
+    source_url: "https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors"
+    local_path: "models/image/loras/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors"
+    size_bytes: 849608296
+    sha256: "22226e8d05d354bb356627d428809f5afd7819399b077238a2b70a82883a904f"
+    license: "apache-2.0"
+    commercial_status: "allowed"
+    backends: ["comfyui"]
+    installed: true
     tested: false
 
   - id: minimax_h3_wangp_low_vram

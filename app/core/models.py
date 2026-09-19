@@ -22,6 +22,7 @@ class JobKind(str, Enum):
     CANON_EXTRACT = "canon_extract"
     SEASON_MAP = "season_map"
     KEYFRAME_GEN = "keyframe_gen"
+    EDIT_REPAIR = "edit_repair"
     RENDER_SHOT = "render_shot"
     AUDIO_GEN = "audio_gen"
     LIP_SYNC = "lip_sync"
@@ -36,7 +37,36 @@ class AssetKind(str, Enum):
     OUTFIT = "outfit"
     LOCATION = "location"
     KEYFRAME = "keyframe"
+    EDITED_ASSET = "edited_asset"
     THUMBNAIL = "thumbnail"
+
+
+class SpecialistEditAction(str, Enum):
+    PRESERVE_IDENTITY_CHANGE_OUTFIT = "preserve_identity_change_outfit"
+    REMOVE_UNWANTED_OBJECT = "remove_unwanted_object"
+    REPAIR_BACKGROUND = "repair_background"
+    DERIVE_ANGLE = "derive_angle"
+    CORRECT_PROP = "correct_prop"
+    MATERIAL_SWAP = "material_swap"
+
+
+class SpecialistEditRequest(BaseModel):
+    project_id: str
+    source_asset_id: str
+    action: SpecialistEditAction
+    instruction: Optional[str] = None
+    seed: Optional[int] = 1000
+
+
+class SpecialistEditResponse(BaseModel):
+    edit_job_id: str
+    action: str
+    source_asset_id: str
+    output_asset_id: str
+    status: str
+    prompt: str
+    seed: int
+    provenance_json: Dict[str, Any] = Field(default_factory=dict)
 
 
 class AssetRecord(BaseModel):

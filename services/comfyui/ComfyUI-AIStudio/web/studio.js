@@ -197,7 +197,37 @@ class AIStudioUI {
                 alert("Failed to queue angles: " + res.statusText);
             }
         } catch (e) {
-            alert("Error: " + e.message);
+    async triggerSpecialistEdit(sourceAssetId, action, instruction) {
+        if (!this.activeProject) {
+            alert("Select or create an active project first.");
+            return;
+        }
+        if (!sourceAssetId) {
+            alert("Please select a source canonical asset to edit.");
+            return;
+        }
+        try {
+            const res = await fetch(`${STUDIO_API}/editor/edit`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    project_id: this.activeProject.id,
+                    source_asset_id: sourceAssetId,
+                    action: action,
+                    instruction: instruction || null,
+                    seed: Math.floor(Math.random() * 900000) + 100000
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                alert(`Queued Qwen-Image-Edit [${action}] for ${sourceAssetId}! Job: ${data.edit_job_id}`);
+                await this.refresh();
+            } else {
+                const err = await res.json();
+                alert(`Edit request failed: ${err.detail || res.statusText}`);
+            }
+        } catch (e) {
+            alert("Error queuing edit: " + e.message);
         }
     }
 
@@ -308,6 +338,33 @@ class AIStudioUI {
                 ` : ''}
             </div>
 
+            <!-- Phase 5: Specialist Still Editor Card (Qwen-Image-Edit-2511 INT8) -->
+            <div class="studio-card">
+                <div class="studio-card-title">✨ Specialist Still Editor (Qwen-Image-Edit-2511 INT8)</div>
+                <div style="font-size: 11px; color: #888; margin-bottom: 8px;">Targeted repair, outfit swap, prop correction & material swapping.</div>
+                
+                <label style="font-size: 11px; color: #aaa;">Source Character / Asset:</label>
+                <select class="studio-input" id="studio-edit-source-select" style="margin-top: 2px;">
+                    ${canonicalRefs.length === 0 ? '<option value="">No canonical assets available</option>' :
+                        canonicalRefs.map(c => `<option value="${c.id}">${c.id} (${c.metadata_json.character_name || 'Character'})</option>`).join("")
+                    }
+                </select>
+
+                <label style="font-size: 11px; color: #aaa;">Specialist Action:</label>
+                <select class="studio-input" id="studio-edit-action-select" style="margin-top: 2px;">
+                    <option value="preserve_identity_change_outfit">Preserve Identity & Change Outfit</option>
+                    <option value="remove_unwanted_object">Remove Unwanted Object / Artifact</option>
+                    <option value="repair_background">Repair Background Backdrop</option>
+                    <option value="derive_angle">Derive Controlled Angle Perspective</option>
+                    <option value="correct_prop">Correct / Replace Held Prop</option>
+                    <option value="material_swap">Material & Surface Swap</option>
+                </select>
+
+                <label style="font-size: 11px; color: #aaa;">Custom Instruction (Optional):</label>
+                <textarea class="studio-input" id="studio-edit-instruction" rows="2" placeholder="Leave blank to use action default, or provide custom direction..."></textarea>
+                <button class="studio-btn" id="studio-trigger-edit-btn" style="background: #8b5cf6;">⚡ Run Specialist Edit</button>
+            </div>
+
             <!-- Jobs & Queue Card -->
             <div class="studio-card">
                 <div class="studio-card-title">Durable Render Queue</div>
@@ -369,6 +426,19 @@ class AIStudioUI {
                 this.deriveAngles(canonicalId);
             };
         });
+
+        const triggerEditBtn = this.panel.querySelector("#studio-trigger-edit-btn");
+        if (triggerEditBtn) {
+            triggerEditBtn.onclick = () => {
+                const sourceSelect = this.panel.querySelector("#studio-edit-source-select");
+                const actionSelect = this.panel.querySelector("#studio-edit-action-select");
+                const instructionText = this.panel.querySelector("#studio-edit-instruction");
+                const sourceId = sourceSelect ? sourceSelect.value : null;
+                const action = actionSelect ? actionSelect.value : "preserve_identity_change_outfit";
+                const instruction = instructionText ? instructionText.value.trim() : "";
+                this.triggerSpecialistEdit(sourceId, action, instruction);
+            };
+        }
     }
 }
 
