@@ -256,6 +256,7 @@ class CreatorModeEngine:
                     genre=input_data.genre,
                     beat_number=b.beat_number,
                     output_image_path=kf_file,
+                    action=b.action,
                 )
                 clip_ok = render_shot_video_clip(
                     image_path=kf_file,
