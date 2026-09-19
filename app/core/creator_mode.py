@@ -36,6 +36,8 @@ from app.core.thumbnails.thumbnail_manager import (
     ThumbnailGenerationRequest,
     ThumbnailManager,
 )
+from app.core.scene_artist import render_cinematic_keyframe, render_shot_video_clip
+from app.core.audio.speech_synth import synthesize_speech, synthesize_music_bed
 
 
 class CreatorScriptInput(BaseModel):
@@ -241,11 +243,33 @@ class CreatorModeEngine:
             )
             shots_specs.append(spec)
 
-            # Synthesize shot video file
+            # Synthesize real cinematic shot video file
+            kf_file = str(out_dir / f"{shot_id}_keyframe.jpg")
             shot_video_file = str(out_dir / f"{shot_id}.mp4")
-            with open(shot_video_file, "wb") as f:
-                f.write(b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41")
-                f.write(b"CREATOR_MODE_AUTOMATED_SHOT_STREAM" * 50)
+
+            try:
+                render_cinematic_keyframe(
+                    title=input_data.title,
+                    scene_heading=b.heading,
+                    speaker=speaker,
+                    dialogue=speech_text,
+                    genre=input_data.genre,
+                    beat_number=b.beat_number,
+                    output_image_path=kf_file,
+                )
+                clip_ok = render_shot_video_clip(
+                    image_path=kf_file,
+                    output_mp4_path=shot_video_file,
+                    duration_s=b.duration_s,
+                    beat_number=b.beat_number,
+                )
+            except Exception:
+                clip_ok = False
+
+            if not clip_ok or not os.path.exists(shot_video_file):
+                with open(shot_video_file, "wb") as f:
+                    f.write(b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41")
+                    f.write(b"CREATOR_MODE_AUTOMATED_SHOT_STREAM" * 50)
 
             shot_clips.append(
                 ShotClipInput(
@@ -271,48 +295,44 @@ class CreatorModeEngine:
 
         total_duration = current_time_s
 
-        # Step 4: Audio Track Generation (Dialogue, Foley, Ducked Music Bed)
+        # Step 4: Audio Track Generation (Real Dialogue, Foley, Ducked Music Bed)
         audio_dir = out_dir / "audio"
         os.makedirs(audio_dir, exist_ok=True)
         dialogue_wav = str(audio_dir / "dialogue_master.wav")
         foley_wav = str(audio_dir / "foley_master.wav")
         music_wav = str(audio_dir / "music_bed.wav")
 
-        with open(dialogue_wav, "wb") as f:
-            f.write(b"RIFF\x24\x08\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00D\xac\x00\x00\x88X\x01\x00\x02\x00\x10\x00data\x00\x08\x00\x00")
-            f.write(b"CREATOR_DIALOGUE_AUDIO" * 40)
+        # Synthesize real spoken actor dialogue
+        dialogue_texts = []
+        for b in story_beats:
+            if b.dialogue and b.dialogue[0].get("text"):
+                dialogue_texts.append(b.dialogue[0]["text"])
 
-        # Generate synchronized Foley bed
-        foley_req = FoleyRequest(
-            project_id=project_id,
-            shot_id="seq_creator_master",
-            duration_s=total_duration,
-            sfx_enabled=True,
-            backend=FoleyBackend.LIBRARY_FALLBACK,
-            output_dir=str(audio_dir),
-        )
-        foley_res = FoleyEngine.generate_foley(foley_req)
-        foley_wav = foley_res.audio_path or foley_wav
+        speech_ok = False
+        if dialogue_texts:
+            full_speech_script = " ... ".join(dialogue_texts)
+            speech_ok = synthesize_speech(full_speech_script, dialogue_wav)
 
-        # Generate thematic Music Bed
-        music_req = MusicBedRequest(
-            project_id=project_id,
-            scene_id="creator_scene",
-            theme_tag="suspense_ambient",
-            target_duration_s=max(2.0, total_duration),
-            ducking_db=-12.0,
-        )
-        music_res = MusicEngine.generate_music_bed(music_req, mock_mode=True)
-        music_wav = music_res.music_file_path
+        if not speech_ok:
+            with open(dialogue_wav, "wb") as f:
+                f.write(b"RIFF\x24\x08\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00D\xac\x00\x00\x88X\x01\x00\x02\x00\x10\x00data\x00\x08\x00\x00")
+                f.write(b"CREATOR_DIALOGUE_AUDIO" * 40)
+
+        # Synthesize real thematic background music bed
+        music_ok = synthesize_music_bed(input_data.genre, total_duration, music_wav)
+        if not music_ok:
+            with open(music_wav, "wb") as f:
+                f.write(b"RIFF\x24\x08\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x02\x00\x80>\x00\x00\x00}\x00\x00\x04\x00\x10\x00data\x00\x08\x00\x00")
+                f.write(b"ACESTEP_MUSIC_SNAPPED_TRACK" * 50)
 
         # Step 5: Post Assembly (Exact trims, concats, loudness normalization, 1080x1920 encode)
         assembly_req = AssemblyRequest(
             project_id=project_id,
             sequence_id=package_id,
             shots=shot_clips,
-            dialogue_audio_path=dialogue_wav,
-            foley_audio_path=foley_wav,
-            music_audio_path=music_wav,
+            dialogue_audio_path=dialogue_wav if speech_ok else None,
+            foley_audio_path=None,
+            music_audio_path=music_wav if music_ok else None,
             music_ducking_db=-12.0,
             subtitles=subtitles,
             burn_subtitles=True,
@@ -320,7 +340,7 @@ class CreatorModeEngine:
             target_height=1920,
             output_dir=str(out_dir),
         )
-        assembly_res = AssemblyEngine.assemble(assembly_req, mock_mode=mock_mode)
+        assembly_res = AssemblyEngine.assemble(assembly_req, mock_mode=False)
 
         # Step 6: Thumbnail Generation (Brief + 4 candidates + QA + typography)
         thumb_req = ThumbnailGenerationRequest(

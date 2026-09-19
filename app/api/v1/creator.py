@@ -25,7 +25,7 @@ def parse_script_beats(req: CreatorScriptInput) -> List[CreatorStoryBeat]:
 @router.post("/execute", response_model=CreatorPackage)
 def execute_creator_mode(
     req: CreatorScriptInput,
-    mock: bool = Query(default=True, description="Run in mock mode for testing"),
+    mock: bool = Query(default=False, description="Run in mock mode for testing"),
 ) -> CreatorPackage:
     """Executes the complete autonomous Creator Mode pipeline without requiring manual node graph interaction."""
     try:
