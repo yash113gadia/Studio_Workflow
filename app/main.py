@@ -11,6 +11,7 @@ from app.api.v1.gpu import router as gpu_router
 from app.api.v1.assets import router as assets_router
 from app.api.v1.editor import router as editor_router
 from app.api.v1.continuity import router as continuity_router
+from app.api.v1.novel import router as novel_router
 
 
 
@@ -47,6 +48,7 @@ app.include_router(gpu_router, prefix="/api/v1")
 app.include_router(assets_router, prefix="/api/v1")
 app.include_router(editor_router, prefix="/api/v1")
 app.include_router(continuity_router, prefix="/api/v1")
+app.include_router(novel_router, prefix="/api/v1")
 
 
 

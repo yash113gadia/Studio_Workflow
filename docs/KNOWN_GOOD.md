@@ -54,5 +54,13 @@ This document pins exact known-good commits, SHAs, model hashes, Python versions
   - World State Snapshot & Restoration: Exact bit-for-bit restoration of character wardrobe, held prop, injury state, emotional state, and blocking marks across database/process restarts.
   - Scene Continuity Inheritance Machine: Autonomous state propagation from Scene N to Scene N+1 preserving character appearance and held items, with deterministic state transitions when intervening continuity events (wardrobe change, injury sustained, prop dropped) occur with narrative rationale.
 
+- **Profile `phase-07-novel-season-planner`**:
+  - Test Suite: `tests/test_phase_07_season_planner.py` (4 passed in 1.23s). Full regression: 26/26 passed across all phases.
+  - Ingestion Engine: Structural chapter detection across headings and stable chunk citations indexed in SQLite FTS5 (`app/core/novel_parser.py`).
+  - Pre-Production Entity Extractor: Autonomous discovery of recurring characters, core wardrobe, locations, and narrative props pre-populating Phase 6 DB (`app/core/season_planner.py`).
+  - Season Planning Architecture: Complete 5-episode mini-season and 45-episode full season map generation with episodic cliffhangers (`revelation`, `peril`, `betrayal`, `dilemma`) designed for vertical retention.
+  - Adaptation Provenance: Every adaptation decision tagged as either citeable `CANON_SOURCE` (referencing deterministic chunk IDs) or `ADAPTATION_BRIDGE` original material.
+
+
 
 
