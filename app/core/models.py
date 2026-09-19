@@ -18,6 +18,7 @@ class JobStatus(str, Enum):
 class JobKind(str, Enum):
     DUMMY = "dummy"
     NOVEL_PARSE = "novel_parse"
+    CANONICAL_CASTING = "canonical_casting"
     CANON_EXTRACT = "canon_extract"
     SEASON_MAP = "season_map"
     KEYFRAME_GEN = "keyframe_gen"
@@ -26,6 +27,30 @@ class JobKind(str, Enum):
     LIP_SYNC = "lip_sync"
     THUMBNAIL = "thumbnail"
     PACKAGE = "package"
+
+
+class AssetKind(str, Enum):
+    CASTING_CANDIDATE = "casting_candidate"
+    CANONICAL_REF = "canonical_ref"
+    CANONICAL_ANGLE = "canonical_angle"
+    OUTFIT = "outfit"
+    LOCATION = "location"
+    KEYFRAME = "keyframe"
+    THUMBNAIL = "thumbnail"
+
+
+class AssetRecord(BaseModel):
+    id: str
+    project_id: str
+    tier: int = 0
+    kind: str
+    version: str
+    name: str
+    file_path: str
+    metadata_json: Dict[str, Any] = Field(default_factory=dict)
+    provenance_json: Dict[str, Any] = Field(default_factory=dict)
+    created_at: str
+
 
 
 class JobCreate(BaseModel):

@@ -8,6 +8,8 @@ from app.api.v1.health import router as health_router
 from app.api.v1.projects import router as projects_router
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.gpu import router as gpu_router
+from app.api.v1.assets import router as assets_router
+
 
 
 @asynccontextmanager
@@ -40,6 +42,8 @@ app.include_router(health_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(gpu_router, prefix="/api/v1")
+app.include_router(assets_router, prefix="/api/v1")
+
 
 
 @app.get("/")

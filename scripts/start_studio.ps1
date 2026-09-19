@@ -26,7 +26,7 @@ if (Test-Path $pidFile) {
 }
 
 Write-Host "Starting Studio Core on 127.0.0.1:8000..."
-$process = Start-Process -FilePath $python -ArgumentList "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000" -WorkingDirectory $root -RedirectStandardOutput $logFile -RedirectStandardError "$logsDir\studio_core_err.log" -PassThru -NoNewWindow
+$process = Start-Process -FilePath $python -ArgumentList "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000" -WorkingDirectory $root -RedirectStandardOutput $logFile -RedirectStandardError "$logsDir\studio_core_err.log" -PassThru
 
 $process.Id | Out-File -FilePath $pidFile -Encoding ascii
 Write-Host "Studio Core started successfully with PID $($process.Id)."

@@ -18,7 +18,9 @@ This document pins exact known-good commits, SHAs, model hashes, Python versions
 | **ComfyUI Core** | v0.36.0 (commit `3c80da7f87ee359b2d06f107cb3c0797079dfbbb`) | Yes (Phase 2) | Official upstream, 958 nodes, PyTorch 2.14.0+cu126, CUDA 12.6, RTX 3070 8GB |
 | **ComfyUI-Manager** | v3.42 | Yes (Phase 2) | In `custom_nodes/ComfyUI-Manager` |
 | **ComfyUI-AIStudio** | v0.1.0 | Yes (Phase 3) | Custom sidebar extension in `custom_nodes/ComfyUI-AIStudio` |
-| **FLUX.2 Klein 4B Distilled** | Official BFL / Comfy Org | Pending Phase 4 | Central model store |
+| **FLUX.2 Klein 4B FP8** | Black Forest Labs / Comfy-Org | Yes (Phase 4) | `models/image/diffusion_models/flux-2-klein-4b-fp8.safetensors` (SHA256: `97ed34fe...`) |
+| **Qwen 3.4B Text Encoder** | Comfy-Org / Qwen | Yes (Phase 4) | `models/image/text_encoders/qwen_3_4b.safetensors` (SHA256: `6c671498...`) |
+| **FLUX2 VAE** | Comfy-Org | Yes (Phase 4) | `models/image/vae/flux2-vae.safetensors` (SHA256: `868fe7b3...`) |
 
 ---
 
@@ -37,4 +39,12 @@ This document pins exact known-good commits, SHAs, model hashes, Python versions
 - **Profile `phase-03-comfy-studio-ui-shell`**:
   - Test Suite: `tests/test_phase_03_ui_extension.py` (3 passed in 2.65s).
   - Verified: Frontend extension assets served via ComfyUI static web server (`/extensions/ComfyUI-AIStudio/studio.js`, `studio.css`), bi-directional integration with Studio Core API (`127.0.0.1:8000`), project creation, dummy job queuing in durable SQLite queue, dynamic UI status updates, and full persistence across simulated ComfyUI server restarts.
+
+- **Profile `phase-04-flux-asset-factory`**:
+  - Test Suite: `tests/test_phase_04_flux_factory.py` (6 passed in 1.18s). Full regression: 15/15 passed across all phases.
+  - E2E Generation: Verified live ComfyUI generation using official FLUX.2 Klein text-to-image architecture (`scripts/test_flux_e2e.py`). Generated `flux2_klein_e2e_test_00001_.png` in ~15s on RTX 3070 (8GB VRAM).
+  - Model Verification: Bit-level SHA256 checksum verification of all 3 required weights on local NVMe disk (`flux2-vae`, `flux-2-klein-4b-fp8`, `qwen_3_4b`).
+  - Workflows: 2 official untouched upstream workflows cataloged with SHA256 in `docs/UPSTREAM_MANIFEST.md`; 5 Studio parametric workflows registered in `workflows/api_format/`.
+  - Character Asset Factory: Casting session with 3 deterministic candidates, promotion of candidate to canonical `CHAR_*_V001`, strict immutability protection preventing overwrites, and derivation of 5 canonical angles (`FRONT_NEUTRAL`, `THREE_QUARTER_LEFT`, `THREE_QUARTER_RIGHT`, `PROFILE_LEFT`, `PROFILE_RIGHT`) with complete provenance tracking.
+
 
