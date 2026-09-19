@@ -1,0 +1,10 @@
+[project]
+name = "comfyui-aistudio"
+version = "0.1.0"
+description = "AI Studio Operating System Panel for ComfyUI"
+readme = "README.md"
+authors = [{ name = "Antigravity Team" }]
+license = { text = "MIT" }
+
+[project.urls]
+Homepage = "https://localhost:8000"

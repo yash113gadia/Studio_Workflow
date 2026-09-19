@@ -7,6 +7,8 @@ __pycache__/
 environments/
 venv/
 .venv/
+services/comfyui/ComfyUI/
+
 
 # Studio dynamic data & model weights
 models/

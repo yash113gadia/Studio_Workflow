@@ -17,7 +17,7 @@ This document pins exact known-good commits, SHAs, model hashes, Python versions
 | **Studio Core API** | v0.1.0 | Yes (Phase 1) | FastAPI + SQLite + WAL mode |
 | **ComfyUI Core** | v0.36.0 (commit `3c80da7f87ee359b2d06f107cb3c0797079dfbbb`) | Yes (Phase 2) | Official upstream, 958 nodes, PyTorch 2.14.0+cu126, CUDA 12.6, RTX 3070 8GB |
 | **ComfyUI-Manager** | v3.42 | Yes (Phase 2) | In `custom_nodes/ComfyUI-Manager` |
-| **ComfyUI-AIStudio** | v0.1.0 | In Progress (Phase 3) | Custom sidebar extension in `custom_nodes/ComfyUI-AIStudio` |
+| **ComfyUI-AIStudio** | v0.1.0 | Yes (Phase 3) | Custom sidebar extension in `custom_nodes/ComfyUI-AIStudio` |
 | **FLUX.2 Klein 4B Distilled** | Official BFL / Comfy Org | Pending Phase 4 | Central model store |
 
 ---
@@ -33,3 +33,8 @@ This document pins exact known-good commits, SHAs, model hashes, Python versions
   - Test Script: `scripts/test_comfy_api.py`.
   - Verified: ComfyUI server startup on `127.0.0.1:8188`, `/system_stats` verified with CUDA RTX 3070, `/object_info` (958 nodes registered), programmatic queue submission of deterministic workflow (`LoadImage` -> `SaveImage`), output image generated at `C:\Users\nikhi\Preeti_Studio\services\comfyui\ComfyUI\output\api_acceptance_test_00001_.png` (448 bytes) without manual clicking.
   - Extra model paths verified: `extra_model_paths.yaml` mapped to `Preeti_Studio\models`.
+
+- **Profile `phase-03-comfy-studio-ui-shell`**:
+  - Test Suite: `tests/test_phase_03_ui_extension.py` (3 passed in 2.65s).
+  - Verified: Frontend extension assets served via ComfyUI static web server (`/extensions/ComfyUI-AIStudio/studio.js`, `studio.css`), bi-directional integration with Studio Core API (`127.0.0.1:8000`), project creation, dummy job queuing in durable SQLite queue, dynamic UI status updates, and full persistence across simulated ComfyUI server restarts.
+

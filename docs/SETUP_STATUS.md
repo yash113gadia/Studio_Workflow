@@ -13,8 +13,8 @@
 | **Phase 0** | Read-Only Machine Audit | **PASSED** | Hardware exact match: Ryzen 9 5900HX, RTX 3070 8GB, 16GB RAM, Windows 11. See `docs/MACHINE_AUDIT.md`. |
 | **Phase 1** | Repository, Docs, Configs, DB & Durable Queue | **PASSED** | Scaffolding complete, Python 3.11 venv, FastAPI Studio Core, SQLite DB, durable queue, GPU lease, 6 automated acceptance tests passed (`tests/test_phase_01_core.py`). |
 | **Phase 2** | Clean ComfyUI Baseline & API Adapter | **PASSED** | Isolated `comfy_env` (PyTorch 2.14.0+cu126, CUDA 12.6, RTX 3070 detected, 958 nodes loaded, Manager v3.42). Acceptance test `scripts/test_comfy_api.py` passed and verified output image generation without manual clicking. |
-| **Phase 3** | ComfyUI AI Studio UI Extension Shell | **IN PROGRESS** | Frontend sidebar extension registering "AI Studio" tab. |
-| **Phase 4** | Workflow Registry & FLUX.2 Klein Asset Factory | **PENDING** | FLUX.2 Klein 4B distilled, test character casting & 5 angles. |
+| **Phase 3** | ComfyUI AI Studio UI Extension Shell | **PASSED** | `ComfyUI-AIStudio` frontend extension loaded by ComfyUI, serves `studio.js` and `studio.css`, connects to Studio Core over localhost, project creation, dummy job queuing, and restart persistence verified by automated test suite (`tests/test_phase_03_ui_extension.py`). |
+| **Phase 4** | Workflow Registry & FLUX.2 Klein Asset Factory | **IN PROGRESS** | FLUX.2 Klein 4B distilled, test character casting & 5 angles. |
 | **Phase 5** | Qwen-Image-Edit-2511 Specialist | **PENDING** | INT8 ConvRot image repair & clothing swap specialist. |
 | **Phase 6** | Memory, Canon & Continuity DB | **PENDING** | Hierarchical state, world state snapshots, SQLite FTS5. |
 | **Phase 7** | Novel Ingestion & Season Planning | **PENDING** | Text chunking, entity extraction, 40–50 ep season map before rendering. |
