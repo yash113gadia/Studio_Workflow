@@ -112,5 +112,261 @@ def init_db():
     VALUES (1, ?)
     """, (datetime.utcnow().isoformat(),))
 
+    # ========================================================
+    # Phase 6: Asset Registry, World Memory & Canon Continuity
+    # ========================================================
+
+    # 5. Characters & Versions
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS characters (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        code TEXT NOT NULL,
+        tier INTEGER DEFAULT 0,
+        bio TEXT DEFAULT '',
+        visual_description TEXT DEFAULT '',
+        canonical_asset_id TEXT,
+        voice_id TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 6. Wardrobe Outfits
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS wardrobe (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        character_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        top TEXT DEFAULT '',
+        bottom TEXT DEFAULT '',
+        footwear TEXT DEFAULT '',
+        accessories TEXT DEFAULT '',
+        palette_json TEXT DEFAULT '[]',
+        continuity_tags_json TEXT DEFAULT '{}',
+        forbidden_additions_json TEXT DEFAULT '[]',
+        asset_id TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 7. Locations & Recurring Sets
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS locations (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        code TEXT NOT NULL,
+        setting_type TEXT DEFAULT 'interior',
+        description TEXT DEFAULT '',
+        floorplan_asset_id TEXT,
+        master_wide_asset_id TEXT,
+        camera_positions_json TEXT DEFAULT '[]',
+        lighting_recipes_json TEXT DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 8. Location States (e.g. pristine, damaged, trashed, renovated)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS location_states (
+        id TEXT PRIMARY KEY,
+        location_id TEXT NOT NULL,
+        state_name TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        visual_delta_json TEXT DEFAULT '{}',
+        asset_id TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 9. Props & Vehicles
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS props (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        code TEXT NOT NULL,
+        prop_type TEXT DEFAULT 'object',
+        owner_character_id TEXT,
+        current_holder_id TEXT,
+        location_id TEXT,
+        current_state TEXT DEFAULT 'pristine',
+        narrative_significance TEXT DEFAULT '',
+        asset_id TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 10. Prop States
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS prop_states (
+        id TEXT PRIMARY KEY,
+        prop_id TEXT NOT NULL,
+        state_name TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        is_damaged BOOLEAN DEFAULT 0,
+        asset_id TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (prop_id) REFERENCES props(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 11. Voices
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS voices (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        character_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        engine TEXT DEFAULT 'chatterbox',
+        language TEXT DEFAULT 'en',
+        accent TEXT DEFAULT '',
+        pace REAL DEFAULT 1.0,
+        pitch REAL DEFAULT 0.0,
+        canonical_audio_path TEXT DEFAULT '',
+        pronunciation_notes_json TEXT DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 12. Character Relationships
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS relationships (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        char_a_id TEXT NOT NULL,
+        char_b_id TEXT NOT NULL,
+        relation_type TEXT NOT NULL,
+        sentiment_score REAL DEFAULT 0.0,
+        knowledge_state_json TEXT DEFAULT '{}',
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (char_a_id) REFERENCES characters(id) ON DELETE CASCADE,
+        FOREIGN KEY (char_b_id) REFERENCES characters(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 13. Episodes, Scenes, Shots
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS episodes (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        episode_number INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        logline TEXT DEFAULT '',
+        status TEXT DEFAULT 'DRAFT',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS scenes (
+        id TEXT PRIMARY KEY,
+        episode_id TEXT NOT NULL,
+        scene_number INTEGER NOT NULL,
+        location_id TEXT,
+        location_state_id TEXT,
+        time_of_day TEXT DEFAULT 'day',
+        story_time_timestamp TEXT DEFAULT '',
+        summary TEXT DEFAULT '',
+        status TEXT DEFAULT 'PLANNED',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (episode_id) REFERENCES episodes(id) ON DELETE CASCADE,
+        FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS shots (
+        id TEXT PRIMARY KEY,
+        scene_id TEXT NOT NULL,
+        shot_number INTEGER NOT NULL,
+        camera_slot TEXT DEFAULT 'CAM_WIDE',
+        line_of_action_id TEXT DEFAULT 'LINE_01',
+        duration_seconds REAL DEFAULT 3.0,
+        action_prompt TEXT NOT NULL,
+        dialogue_text TEXT DEFAULT '',
+        status TEXT DEFAULT 'QUEUED',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (scene_id) REFERENCES scenes(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 14. World State Snapshots per Scene
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS scene_character_states (
+        id TEXT PRIMARY KEY,
+        scene_id TEXT NOT NULL,
+        character_id TEXT NOT NULL,
+        wardrobe_id TEXT,
+        held_prop_id TEXT,
+        injury_state TEXT DEFAULT 'none',
+        emotional_state TEXT DEFAULT 'neutral',
+        blocking_mark TEXT DEFAULT 'MARK_CENTER',
+        screen_side TEXT DEFAULT 'center',
+        visual_overrides_json TEXT DEFAULT '{}',
+        FOREIGN KEY (scene_id) REFERENCES scenes(id) ON DELETE CASCADE,
+        FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS scene_location_states (
+        id TEXT PRIMARY KEY,
+        scene_id TEXT NOT NULL,
+        location_id TEXT NOT NULL,
+        state_id TEXT,
+        lighting_state TEXT DEFAULT 'day',
+        environmental_conditions_json TEXT DEFAULT '{}',
+        FOREIGN KEY (scene_id) REFERENCES scenes(id) ON DELETE CASCADE,
+        FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 15. Continuity Events (Changes in wardrobe, injuries, damage)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS continuity_events (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        scene_id TEXT,
+        shot_id TEXT,
+        event_type TEXT NOT NULL,
+        target_entity_type TEXT NOT NULL,
+        target_entity_id TEXT NOT NULL,
+        from_state TEXT,
+        to_state TEXT NOT NULL,
+        narrative_rationale TEXT DEFAULT '',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+    """)
+
+    # 16. SQLite FTS5 Virtual Table for Canon & Novel Knowledge
+    cursor.execute("""
+    CREATE VIRTUAL TABLE IF NOT EXISTS canon_knowledge_fts USING fts5(
+        entity_id,
+        entity_type,
+        title,
+        content,
+        tokenize='porter unicode61'
+    )
+    """)
+
+    # Record migration v2
+    cursor.execute("""
+    INSERT OR IGNORE INTO schema_migrations (version, applied_at)
+    VALUES (2, ?)
+    """, (datetime.utcnow().isoformat(),))
+
     conn.commit()
     conn.close()

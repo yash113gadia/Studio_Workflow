@@ -47,4 +47,12 @@ This document pins exact known-good commits, SHAs, model hashes, Python versions
   - Workflows: 2 official untouched upstream workflows cataloged with SHA256 in `docs/UPSTREAM_MANIFEST.md`; 5 Studio parametric workflows registered in `workflows/api_format/`.
   - Character Asset Factory: Casting session with 3 deterministic candidates, promotion of candidate to canonical `CHAR_*_V001`, strict immutability protection preventing overwrites, and derivation of 5 canonical angles (`FRONT_NEUTRAL`, `THREE_QUARTER_LEFT`, `THREE_QUARTER_RIGHT`, `PROFILE_LEFT`, `PROFILE_RIGHT`) with complete provenance tracking.
 
+- **Profile `phase-06-memory-continuity`**:
+  - Test Suite: `tests/test_phase_06_continuity.py` (4 passed in 0.77s). Full regression: 22/22 passed across all phases.
+  - Relational Schema: 25 tables active in SQLite WAL mode covering characters, wardrobe packs, recurring locations, location states, props, prop states, voice profiles, character relationships, episodes, scenes, shots, scene world state snapshots, continuity events, and `canon_knowledge_fts` virtual table.
+  - FTS5 Text Search: Sub-millisecond full-text indexed queries over character visual descriptions, wardrobe attire, set descriptions, and prop significance.
+  - World State Snapshot & Restoration: Exact bit-for-bit restoration of character wardrobe, held prop, injury state, emotional state, and blocking marks across database/process restarts.
+  - Scene Continuity Inheritance Machine: Autonomous state propagation from Scene N to Scene N+1 preserving character appearance and held items, with deterministic state transitions when intervening continuity events (wardrobe change, injury sustained, prop dropped) occur with narrative rationale.
+
+
 

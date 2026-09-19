@@ -9,6 +9,8 @@ from app.api.v1.projects import router as projects_router
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.gpu import router as gpu_router
 from app.api.v1.assets import router as assets_router
+from app.api.v1.editor import router as editor_router
+from app.api.v1.continuity import router as continuity_router
 
 
 
@@ -43,6 +45,8 @@ app.include_router(projects_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(gpu_router, prefix="/api/v1")
 app.include_router(assets_router, prefix="/api/v1")
+app.include_router(editor_router, prefix="/api/v1")
+app.include_router(continuity_router, prefix="/api/v1")
 
 
 
