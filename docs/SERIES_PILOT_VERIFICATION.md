@@ -1,7 +1,7 @@
 # Series Mode Pilot Verification: PILOT_A_2_EP
-**Project ID:** `proj_94aca736e441`  
+**Project ID:** `proj_44176c2a6970`  
 **Series Title:** Shadow Protocol  
-**Date:** 2026-09-19T13:33:11.980887+00:00  
+**Date:** 2026-09-19T16:39:28.030193+00:00  
 **Episodes Evaluated:** 2 episodes  
 **Overall Result:** PASSED  
 **Next Unlocked Tier:** `pilot_b_5_ep`  
