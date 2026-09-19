@@ -1,0 +1,18 @@
+# Preeti Studio Central Models Mapping for ComfyUI
+preeti_studio:
+  base_path: C:/Users/nikhi/Preeti_Studio/models
+  checkpoints: image
+  clip: image
+  clip_vision: image
+  configs: image
+  diffusers: image
+  diffusion_models: image
+  embeddings: image
+  gligen: image
+  loras: image
+  style_models: image
+  text_encoders: image
+  unet: image
+  vae: image
+  vae_approx: image
+  upscale_models: upscalers
