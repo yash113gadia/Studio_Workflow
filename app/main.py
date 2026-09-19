@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import init_db
@@ -22,6 +24,7 @@ from app.api.v1.thumbnails import router as thumbnails_router
 from app.api.v1.creator import router as creator_router
 from app.api.v1.series import router as series_router
 from app.api.v1.sandbox import router as sandbox_router
+from app.api.v1.media import router as media_router
 
 
 
@@ -70,11 +73,19 @@ app.include_router(thumbnails_router, prefix="/api/v1")
 app.include_router(creator_router, prefix="/api/v1")
 app.include_router(series_router, prefix="/api/v1")
 app.include_router(sandbox_router, prefix="/api/v1")
+app.include_router(media_router, prefix="/api/v1")
 
 
+@app.get("/", response_class=FileResponse)
+@app.get("/studio", response_class=FileResponse)
+def studio_ui():
+    """Serves the user-friendly creator web UI."""
+    index_file = Path(__file__).resolve().parent / "static" / "index.html"
+    return FileResponse(str(index_file), media_type="text/html")
 
-@app.get("/")
-def root():
+
+@app.get("/api/v1/info")
+def root_info():
     return {
         "studio": settings.studio_name,
         "version": settings.version,

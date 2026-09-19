@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preeti Studio — AI Film & Video Creator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(18, 24, 38, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #8b5cf6;
+      --accent-glow: rgba(139, 92, 246, 0.4);
+      --accent-2: #06b6d4;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #151c2e 0%, var(--bg) 75%);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Top Navigation */
+    header {
+      backdrop-filter: blur(16px);
+      background: rgba(7, 9, 14, 0.75);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .brand-text h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #fff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success);
+    }
+
+    /* Tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1200px;
+      margin: 32px auto;
+      padding: 0 24px;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .hero-banner h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-banner p {
+      color: var(--text-muted);
+      font-size: 15px;
+      max-width: 550px;
+      margin: 0 auto;
+    }
+
+    /* Grid Layout */
+    .creator-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .creator-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .glass-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Form Controls */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"], textarea, select {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 16px;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    input[type="text"]:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 150px;
+      line-height: 1.6;
+    }
+
+    /* Quick Story Chips */
+    .chips-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip:hover {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: var(--accent);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* Duration Selector */
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .option-btn {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-muted);
+    }
+
+    .option-btn strong {
+      display: block;
+      font-size: 14px;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .option-btn span {
+      font-size: 11px;
+    }
+
+    .option-btn.selected {
+      border-color: var(--accent);
+      background: rgba(139, 92, 246, 0.15);
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+    }
+
+    /* Make Video Button */
+    .btn-create {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 50%, var(--accent-2) 100%);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 16px 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 10px 25px var(--accent-glow);
+      transition: all 0.25s ease;
+      margin-top: 10px;
+    }
+
+    .btn-create:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 35px rgba(139, 92, 246, 0.6);
+    }
+
+    .btn-create:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Video Player & Results Card */
+    .video-preview-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 9/16;
+      max-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .video-preview-wrapper video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .placeholder-state {
+      text-align: center;
+      padding: 32px;
+      color: var(--text-muted);
+    }
+
+    .placeholder-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.7;
+    }
+
+    /* Progress Tracker */
+    .progress-card {
+      margin-top: 20px;
+      display: none;
+    }
+
+    .progress-bar-container {
+      background: rgba(255, 255, 255, 0.08);
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .step-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .step-item.active {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .step-item.done {
+      color: var(--success);
+    }
+
+    .step-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    .step-item.done .step-icon {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+
+    /* Result Action Buttons */
+    .result-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Gallery Grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    .video-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .video-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+      border-color: rgba(139, 92, 246, 0.4);
+    }
+
+    .video-card-thumb {
+      aspect-ratio: 9/16;
+      max-height: 280px;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .video-card-thumb img, .video-card-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .video-card-info {
+      padding: 16px;
+    }
+
+    .video-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .video-card-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">✨</div>
+      <div class="brand-text">
+        <h1>Preeti Studio</h1>
+        <p>Autonomous AI Film OS</p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('creator')">🎬 Video Maker</button>
+      <button class="tab-btn" onclick="switchTab('gallery')">📁 Video Gallery</button>
+    </div>
+
+    <!-- System Status -->
+    <div class="status-pill">
+      <div class="dot"></div>
+      <span id="system-status">RTX 3070 Ready • 206 GB Free</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Tab 1: Video Creator -->
+    <div id="tab-creator" class="tab-content active">
+      <div class="hero-banner">
+        <h2>Turn Any Story into a Vertical Video</h2>
+        <p>Type your scene, script, or story idea below. The AI handles character casting, voices, cinematic shots, music, and subtitles automatically.</p>
+      </div>
+
+      <div class="creator-grid">
+        <!-- Left: Script & Settings -->
+        <div class="glass-card">
+          <div class="card-title">📝 1. Your Story & Script</div>
+
+          <div class="form-group">
+            <label for="video-title">Video Title</label>
+            <input type="text" id="video-title" placeholder="e.g., The Midnight Code" value="The Neon Cipher" />
+          </div>
+
+          <div class="chips-label">💡 Or choose an instant story idea:</div>
+          <div class="chips-row">
+            <button class="chip" onclick="loadPrompt('cyberpunk')">🌧️ Cyberpunk Alley</button>
+            <button class="chip" onclick="loadPrompt('romance')">☕ Cafe Encounter</button>
+            <button class="chip" onclick="loadPrompt('mystery')">🕵️ Detective Mystery</button>
+            <button class="chip" onclick="loadPrompt('scifi')">🚀 Space Signal</button>
+          </div>
+
+          <div class="form-group">
+            <label for="script-text">Script / Dialogue / Action</label>
+            <textarea id="script-text" placeholder="Describe the scene and write dialogue. For example:
+SCENE 1: A rainy neon street. Diya walks forward looking over her shoulder.
+DIYA: We found the encrypted drive. The broadcast starts now."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Genre & Style</label>
+            <select id="genre-select">
+              <option value="cyberpunk_thriller">🚀 Cyberpunk / Sci-Fi Thriller</option>
+              <option value="suspense_drama">🕵️ Suspense & Mystery Drama</option>
+              <option value="romance_cinematic">❤️ Romantic & Emotional</option>
+              <option value="action_chase">⚔️ Action & Cinematic</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Target Video Length</label>
+            <div class="option-grid">
+              <div class="option-btn selected" onclick="selectDuration(15, this)">
+                <strong>15 Sec</strong>
+                <span>Quick Reel</span>
+              </div>
+              <div class="option-btn" onclick="selectDuration(30, this)">
+                <strong>30 Sec</strong>
+                <span>Standard Short</span>
+              </div>
+              <div class="option-btn" onclick="selectDuration(45, this)">
+                <strong>45 Sec</strong>
+                <span>Full Story</span>
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-generate" class="btn-create" onclick="generateVideo()">
+            <span>✨ Generate My Video</span>
+          </button>
+        </div>
+
+        <!-- Right: Player & Progress -->
+        <div class="glass-card">
+          <div class="card-title">🎥 2. Video Preview & Render</div>
+
+          <div class="video-preview-wrapper" id="video-wrapper">
+            <div class="placeholder-state" id="placeholder-box">
+              <div class="placeholder-icon">🎬</div>
+              <h3 style="margin-bottom: 6px; font-size: 16px;">No Video Generated Yet</h3>
+              <p style="font-size: 13px;">Write a script on the left and click "Generate My Video" to start.</p>
+            </div>
+            <video id="master-player" controls playsinline style="display: none;"></video>
+          </div>
+
+          <!-- Progress Tracker -->
+          <div class="progress-card" id="progress-card">
+            <div class="progress-bar-container">
+              <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <ul class="step-list">
+              <li class="step-item" id="step-1"><span class="step-icon">1</span> Analyzing story beats & dialogue</li>
+              <li class="step-item" id="step-2"><span class="step-icon">2</span> Casting character & framing shots</li>
+              <li class="step-item" id="step-3"><span class="step-icon">3</span> Synthesizing actor voice speech</li>
+              <li class="step-item" id="step-4"><span class="step-icon">4</span> Composing music bed & sound effects</li>
+              <li class="step-item" id="step-5"><span class="step-icon">5</span> Master assembly (1080x1920 MP4 + subtitles)</li>
+            </ul>
+          </div>
+
+          <!-- Download / Action Buttons -->
+          <div class="result-actions" id="result-actions" style="display: none;">
+            <a id="download-btn" href="#" download class="btn-secondary">⬇️ Download Video</a>
+            <button class="btn-secondary" onclick="switchTab('gallery')">📁 View in Gallery</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Gallery -->
+    <div id="tab-gallery" class="tab-content">
+      <div class="hero-banner">
+        <h2>Your Video Library</h2>
+        <p>All vertical films and episodes generated on this studio computer.</p>
+      </div>
+
+      <div class="gallery-grid" id="gallery-container">
+        <!-- Rendered dynamically -->
+        <p style="text-align: center; color: var(--text-muted); grid-column: 1/-1;">Loading video library...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let selectedDuration = 15;
+
+    const PRESETS = {
+      cyberpunk: `SCENE 1: EXT. NEO-MUMBAI RAINY STREET - NIGHT
+Neon signs reflect off the wet pavement. Diya (24), wearing a dark high-collar coat, walks quickly down the alley, checking her holographic wrist display.
+
+DIYA
+(whispering urgently)
+The transmission is locked. We have under a minute before they trace the signal.`,
+
+      romance: `SCENE 1: INT. COZY MONSOON CAFE - EVENING
+Rain patters against the warm amber glass. Priya sits with a steaming cup of tea, sketching in her journal.
+Aarav pauses by the doorway, his umbrella dripping, catching her eye with a warm smile.
+
+PRIYA
+(smiling softly)
+You're ten minutes late. But I ordered your favorite.`,
+
+      mystery: `SCENE 1: INT. ARCHIVE BASEMENT - NIGHT
+Dust motes float through a single shaft of moonlight. Kabir uncovers a locked wooden safe behind the bookshelf.
+He turns the antique brass dial until it clicks open.
+
+KABIR
+(holding up the ledger)
+It's all here. The accounts were never destroyed.`,
+
+      scifi: `SCENE 1: INT. ORBITAL OBSERVATORY - CONTINUOUS
+Starlight floods the observation deck. Commander Tara watches an anomaly pulsing on the deep space telemetry screen.
+
+TARA
+(into communications badge)
+Station Control, this isn't random radiation. It's an intelligent sequence.`
+    };
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      if (tabId === 'creator') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.getElementById('tab-creator').classList.add('active');
+      } else {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('tab-gallery').classList.add('active');
+        loadGallery();
+      }
+    }
+
+    function selectDuration(dur, el) {
+      selectedDuration = dur;
+      document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function loadPrompt(key) {
+      if (PRESETS[key]) {
+        document.getElementById('script-text').value = PRESETS[key];
+        const titles = {
+          cyberpunk: "The Neon Cipher",
+          romance: "Monsoon Coffee",
+          mystery: "The Basement Archive",
+          scifi: "The Deep Signal"
+        };
+        document.getElementById('video-title').value = titles[key];
+      }
+    }
+
+    async function generateVideo() {
+      const title = document.getElementById('video-title').value.trim() || "Untitled Video";
+      const script = document.getElementById('script-text').value.trim();
+      const genre = document.getElementById('genre-select').value;
+
+      if (!script) {
+        alert("Please write a story or click one of the preset chips above!");
+        return;
+      }
+
+      const btn = document.getElementById('btn-generate');
+      const progressCard = document.getElementById('progress-card');
+      const progressBar = document.getElementById('progress-bar');
+      const placeholder = document.getElementById('placeholder-box');
+      const player = document.getElementById('master-player');
+      const actions = document.getElementById('result-actions');
+
+      btn.disabled = true;
+      btn.innerHTML = "<span>⏳ Generating Your Video...</span>";
+      placeholder.style.display = "flex";
+      player.style.display = "none";
+      actions.style.display = "none";
+      progressCard.style.display = "block";
+
+      // Animated progress simulator while the server compiles
+      let step = 1;
+      const stepInterval = setInterval(() => {
+        if (step <= 5) {
+          progressBar.style.width = (step * 18) + "%";
+          const el = document.getElementById(`step-${step}`);
+          if (el) {
+            el.classList.add('done');
+            el.querySelector('.step-icon').textContent = '✓';
+          }
+          step++;
+        }
+      }, 3500);
+
+      try {
+        const response = await fetch('/api/v1/creator/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: title,
+            raw_script_text: script,
+            target_duration_s: selectedDuration,
+            genre: genre,
+            aspect_ratio: "9:16"
+          })
+        });
+
+        clearInterval(stepInterval);
+
+        if (!response.ok) {
+          throw new Error("Generation failed with status " + response.status);
+        }
+
+        const data = await response.json();
+        progressBar.style.width = "100%";
+        for (let i = 1; i <= 5; i++) {
+          const el = document.getElementById(`step-${i}`);
+          if (el) {
+            el.classList.add('done');
+            el.querySelector('.step-icon').textContent = '✓';
+          }
+        }
+
+        // Set up player
+        const streamUrl = `/api/v1/media/stream?path=${encodeURIComponent(data.master_video_path)}`;
+        player.src = streamUrl;
+        placeholder.style.display = "none";
+        player.style.display = "block";
+        player.play().catch(() => {});
+
+        // Set up download button
+        const downloadBtn = document.getElementById('download-btn');
+        downloadBtn.href = streamUrl;
+        downloadBtn.download = `${title.replace(/\s+/g, '_')}_1080x1920.mp4`;
+        actions.style.display = "flex";
+
+        btn.disabled = false;
+        btn.innerHTML = "<span>✨ Generate Another Video</span>";
+
+      } catch (err) {
+        clearInterval(stepInterval);
+        alert("Error generating video: " + err.message);
+        btn.disabled = false;
+        btn.innerHTML = "<span>✨ Try Again</span>";
+      }
+    }
+
+    async function loadGallery() {
+      const container = document.getElementById('gallery-container');
+      try {
+        const res = await fetch('/api/v1/media/gallery');
+        const data = await res.json();
+        if (!data.videos || data.videos.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: var(--text-muted); grid-column: 1/-1;">No videos generated yet. Create your first video in the Video Maker tab!</p>';
+          return;
+        }
+
+        container.innerHTML = data.videos.map(v => `
+          <div class="video-card" onclick="playInCreator('${encodeURIComponent(v.video_path)}', '${v.title}')">
+            <div class="video-card-thumb">
+              ${v.thumb_url ? `<img src="${v.thumb_url}" alt="${v.title}" />` : `<video src="${v.stream_url}" preload="metadata"></video>`}
+            </div>
+            <div class="video-card-info">
+              <div class="video-card-title">${v.title}</div>
+              <div class="video-card-meta">${v.size_mb} MB • Ready to watch</div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = '<p style="text-align: center; color: #ef4444; grid-column: 1/-1;">Could not load video gallery.</p>';
+      }
+    }
+
+    function playInCreator(encodedPath, title) {
+      switchTab('creator');
+      const player = document.getElementById('master-player');
+      const placeholder = document.getElementById('placeholder-box');
+      const actions = document.getElementById('result-actions');
+      const downloadBtn = document.getElementById('download-btn');
+
+      const streamUrl = `/api/v1/media/stream?path=${encodedPath}`;
+      placeholder.style.display = "none";
+      player.style.display = "block";
+      player.src = streamUrl;
+      player.play().catch(() => {});
+
+      downloadBtn.href = streamUrl;
+      downloadBtn.download = `${title}_1080x1920.mp4`;
+      actions.style.display = "flex";
+      document.getElementById('video-title').value = title;
+    }
+
+    // Initialize default prompt on load
+    loadPrompt('cyberpunk');
+  </script>
+</body>
+</html>
