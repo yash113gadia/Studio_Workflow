@@ -1,8 +1,36 @@
 # Setup Status
 
-**Current Date:** 2026-09-19  
-**Current Phase:** Phase 0 Completed, Transitioning to Phase 1  
+**Current Date:** 2026-09-20  
 **Project Root:** `C:\Users\nikhi\Preeti_Studio`
+
+---
+
+## Honest state as of 2026-09-20 (audit against the Master Plan)
+
+The phase table below records when each phase's *test suite* passed. Several suites passed with
+mocks or hardcoded scores. This section records what has actually run real inference on this machine.
+
+| Capability | Real status | Evidence |
+|---|---|---|
+| FLUX.2 Klein keyframes / images | **Verified** | `POST /creator/generate-image`, storyboard keyframe jobs |
+| Qwen Image Edit 2511 INT8 | **Verified** (~8 min/edit) | `configs/engine_verification.json`, DINO identity 0.946 |
+| LTX-Video 0.9.5 i2v | **Verified** | 15 s generative render, 372 s |
+| 2.5D camera moves + FFmpeg master | **Verified** | storyboard assemble, 1080x1920, loudnorm, SRT |
+| DINOv2 visual QA | **Verified** | per-shot scores in every render |
+| FILM 2x interpolation | **Verified** | `temp/film_smoke_output_48.mp4` |
+| Thumbnails (programmatic typography) | **Verified** | every render |
+| MiniMax H3 (WanGP) | **Wired, unverified** | sidecar runs; model files download on first use (DEC-006) |
+| Chatterbox TTS (WanGP) | **Wired, unverified** | first generation in progress; SAPI remains the fallback |
+| ACE-Step 1.5 music (WanGP) | **Wired, unverified** | model files download on first use |
+| SCAIL-2 | **Not exposed** | needs a driving video per shot; WanGP reports weights partial |
+| FlashVSR upscale | **Not wired** | code still does Lanczos; WanGP `flashvsr*2` postprocess is the intended path |
+| MuseTalk lip-sync, HunyuanVideo-Foley | **Weights not installed** | downloads approved 2026-09-20, in progress |
+| Qwen3-VL semantic QA | **Weights not installed** | `semantic_qa_score` is always null |
+| LLM story intelligence (§53/§54) | **Absent** | entity extraction is a regex; no provider configured |
+| Series pilot (Phase 18) | **Not real** | `series_pilot.py` emits formula scores; no episodes rendered |
+
+Shot-level Creator workflow (storyboards → per-shot keyframes/clips/voice → assemble) runs end-to-end
+through the durable queue worker. Series Mode is a schema without intelligence.
 
 ---
 

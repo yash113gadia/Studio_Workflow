@@ -5,5 +5,12 @@
     "verified_at": "2026-09-20",
     "note": "Real Qwen Image Edit 2511 INT8 inference verified on this RTX 3070 (~8 min per edit, DINO identity 0.946 on outfit change).",
     "evidence": "projects/LIBRARY/assets/edits/EDIT_UPLOAD_4d82fc39-7498-4d44-b63b-32d257cb2c8f_PRESERVE_IDENTITY_CHANGE_OUTFIT_1000.png"
+  },
+  "chatterbox": {
+    "runtime": "verified",
+    "selectable": true,
+    "verified_at": "2026-09-20",
+    "note": "Neural multilingual TTS verified through the WanGP sidecar (24 kHz, ~6 s per line on CPU). Select 'Chatterbox' as the voice engine in storyboard settings.",
+    "evidence": "storyboard job job_2cd6f4614cf8 (speech candidate on The Neon Cipher)"
   }
 }
