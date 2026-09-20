@@ -78,6 +78,13 @@ def generate_ace_step_music(description: str, duration_s: float, output_path: st
     return True
 
 
+def upscale_flashvsr(video_path: str, output_path: str, factor: int = 2, progress: Progress = None) -> bool:
+    settings = {"media_source": str(Path(video_path).resolve()), "spatial_upsampling": f"flashvsr*{factor}"}
+    files = wg.run(settings, mode="postprocess", timeout_s=5400, progress=progress)
+    wg.collect(files, Path(output_path), (".mp4",))
+    return True
+
+
 _status_cache: Dict[str, object] = {"at": 0.0, "value": None}
 
 

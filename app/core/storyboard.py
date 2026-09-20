@@ -840,6 +840,12 @@ def handle_assemble(job_id: str, payload: Dict[str, Any]) -> List[str]:
         burn_subtitles=bool(settings.get("burn_subtitles", True)), target_width=width, target_height=height, output_dir=str(out_dir),
     ), mock_mode=False)
     master = assembly.master_video_path
+    if settings.get("upscale_engine") == "flashvsr":
+        from app.core.wangp_engines import upscale_flashvsr
+        progress_emit(job_id, "upscale", "FlashVSR 2x neural upscale of the master (WanGP).", 62)
+        target = str(Path(master).with_name(Path(master).stem + "_flashvsr.mp4"))
+        upscale_flashvsr(master, target, progress=lambda m, p: progress_emit(job_id, "upscale", f"FlashVSR: {m}"))
+        master = target
     if settings.get("frame_interpolation") == "film_2x":
         progress_emit(job_id, "frame_interpolation", "FILM 2x interpolation on the master.", 70)
         target = str(Path(master).with_name(Path(master).stem + "_film2x.mp4"))
