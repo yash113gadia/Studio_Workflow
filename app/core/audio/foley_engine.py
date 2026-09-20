@@ -342,10 +342,10 @@ class FoleyEngine:
             }
 
             provenance = {
-                "engine": "HunyuanVideo-Foley",
+                "engine": "HunyuanVideo-Foley" if backend_used == FoleyBackend.HUNYUAN_XL_OFFLOAD.value else "procedural_library_foley",
                 "profile": "XL_offload" if backend_used == FoleyBackend.HUNYUAN_XL_OFFLOAD.value else "library_fallback",
                 "official_upstream": "https://github.com/Tencent-Hunyuan/HunyuanVideo-Foley",
-                "offload_enabled": True,
+                "offload_enabled": backend_used == FoleyBackend.HUNYUAN_XL_OFFLOAD.value,
                 "target_duration_s": req.duration_s,
                 "cues_count": len(active_cues),
                 "cues_detail": [c.model_dump() for c in active_cues],

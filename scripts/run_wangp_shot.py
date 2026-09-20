@@ -6,6 +6,14 @@ import sys
 import time
 from pathlib import Path
 
+# Add project root to sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from app.core.post.ffmpeg_utils import run_ffmpeg
+from app.core.scene_artist import render_shot_video_clip
+
 
 def main():
     parser = argparse.ArgumentParser(description="WanGP H3 Shot Runner")
@@ -32,28 +40,10 @@ def main():
     print(f"Output: {output_path}")
     print(f"Profile: {profile.get('model_architecture')} at {profile.get('resolution')}, {profile.get('duration_s')}s")
 
-    t0 = time.time()
-
-    # Create destination parent directory if missing
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    # In production with weights loaded, WanGP pipeline executes here:
-    # from services.wangp.Wan2GP.shared import api as wangp_api
-    # session = wangp_api.init(...)
-    # Here we write an MP4 video header
-    with open(output_path, "wb") as f:
-        f.write(b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41")
-        f.write(b"WANGP_MINIMAX_H3_GENERATED_FRAMES_DATA" * 50)
-
-    elapsed_s = time.time() - t0
-    result = {
-        "status": "success",
-        "job_id": job_id,
-        "output_path": output_path,
-        "elapsed_seconds": elapsed_s,
-        "vram_peak_mb": 5420.0,
-    }
-    print(json.dumps(result))
+    raise RuntimeError(
+        "MiniMax H3 inference is not connected in this adapter. No substitute video was generated. "
+        "Use AI actor motion (LTX Video) in the main Studio, or connect WanGP's real inference API."
+    )
 
 
 if __name__ == "__main__":

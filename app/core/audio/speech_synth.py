@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from app.core.post.ffmpeg_utils import get_ffmpeg_path, run_ffmpeg
 
 
-def synthesize_speech(text: str, output_wav_path: str, rate: int = 0) -> bool:
+def synthesize_speech(text: str, output_wav_path: str, rate: int = 0, voice_index: int = 0) -> bool:
     """Synthesizes human speech from text into a WAV file using Windows Speech Synthesis."""
     if not text or not text.strip():
         return False
@@ -17,16 +17,20 @@ def synthesize_speech(text: str, output_wav_path: str, rate: int = 0) -> bool:
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
     # Sanitize text for speech engine
-    clean_text = text.replace('"', '').replace("'", "").replace("\n", " ").strip()
+    clean_text = text.replace("\n", " ").strip()
+    ps_text = clean_text.replace("'", "''")
+    ps_path = out_file.replace("'", "''")
     if not clean_text:
         return False
 
     ps_code = f"""
 Add-Type -AssemblyName System.Speech
 $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
-$synth.Rate = {rate}
-$synth.SetOutputToWaveFile('{out_file}')
-$synth.Speak('{clean_text}')
+$synth.Rate = {int(rate)}
+$voices = @($synth.GetInstalledVoices() | Where-Object {{ $_.Enabled }})
+if ($voices.Count -gt 0) {{ $synth.SelectVoice($voices[{int(voice_index)} % $voices.Count].VoiceInfo.Name) }}
+$synth.SetOutputToWaveFile('{ps_path}')
+$synth.Speak('{ps_text}')
 $synth.Dispose()
 """
     try:
@@ -36,25 +40,46 @@ $synth.Dispose()
             capture_output=True,
             timeout=25,
         )
-        if os.path.exists(out_file) and os.path.getsize(out_file) > 1000:
+        if res.returncode == 0 and os.path.exists(out_file) and os.path.getsize(out_file) > 1000:
             return True
     except Exception:
         pass
 
-    # Fallback to generating audible tone/speech proxy with FFmpeg if SAPI fails
-    try:
-        dur = max(1.5, round(len(clean_text.split()) * 0.45, 2))
-        cmd = [
-            "-y",
-            "-f", "lavfi", "-i", f"sine=frequency=330:duration={dur}",
-            "-af", "volume=0.25,lowpass=f=1200",
-            "-c:a", "pcm_s16le",
-            out_file,
-        ]
-        ret, _, _ = run_ffmpeg(cmd, timeout_s=15)
-        return ret == 0 and os.path.exists(out_file)
-    except Exception:
-        return False
+    return False
+
+
+def assemble_speech_timeline(shots, output_path: str, total_duration: float) -> bool:
+    """Place each spoken line at its shot start, preserving measured speech speed."""
+    import wave
+    import tempfile
+    sample_rate = 24000
+    timeline = bytearray(round(total_duration * sample_rate) * 2)
+    cursor = 0.0
+    has_speech = False
+    for shot in shots:
+        source = shot.get("speech_path")
+        if source:
+            with tempfile.TemporaryDirectory() as tmp:
+                normalized = str(Path(tmp) / "speech.wav")
+                code, _, err = run_ffmpeg(["-y", "-i", source, "-ar", str(sample_rate),
+                                           "-ac", "1", "-c:a", "pcm_s16le", normalized])
+                if code:
+                    raise RuntimeError(f"Cannot normalize speech: {err[-500:]}")
+                with wave.open(normalized, "rb") as wav:
+                    data = wav.readframes(wav.getnframes())
+            start = round((cursor + 0.3) * sample_rate) * 2
+            if start + len(data) > len(timeline):
+                raise RuntimeError("Speech exceeds the planned timeline")
+            timeline[start:start + len(data)] = data
+            has_speech = True
+        cursor += shot["duration_s"]
+    if has_speech:
+        with wave.open(output_path, "wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(sample_rate)
+            wav.writeframes(timeline)
+    return has_speech
 
 
 def synthesize_music_bed(genre: str, duration_s: float, output_wav_path: str) -> bool:

@@ -114,6 +114,14 @@ def init_db():
     VALUES (1, ?)
     """, (datetime.utcnow().isoformat(),))
 
+    # Shared library project: home for standalone uploads and generated images
+    # that don't belong to a specific creator-mode render project.
+    _now = datetime.utcnow().isoformat()
+    cursor.execute("""
+    INSERT OR IGNORE INTO projects (id, name, kind, description, created_at, updated_at)
+    VALUES ('LIBRARY', 'Shared Library', 'library', 'Uploaded and standalone generated images', ?, ?)
+    """, (_now, _now))
+
     # ========================================================
     # Phase 6: Asset Registry, World Memory & Canon Continuity
     # ========================================================

@@ -5,7 +5,7 @@ import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageEnhance
 from pydantic import BaseModel, Field
 
 from app.core.thumbnails.brief_agent import ThumbnailBrief, ThumbnailBriefAgent
@@ -74,7 +74,74 @@ class ThumbnailManager:
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         w, h = 1080, 1920
 
-        # Colors matching candidate variety
+        # Resolve reference image: explicit path or auto-discover in project
+        resolved_ref = None
+        if ref_image_path and os.path.exists(ref_image_path):
+            resolved_ref = ref_image_path
+        else:
+            out_p = Path(output_file).resolve()
+            search_dirs = [out_p.parent, out_p.parent.parent, out_p.parent.parent.parent]
+            for sdir in search_dirs:
+                if sdir.exists():
+                    candidates = list(sdir.glob("*_keyframe.jpg")) + list(sdir.glob("*.jpg")) + list(sdir.glob("*.png"))
+                    valid_cands = [c for c in candidates if "thumb" not in c.name and "raw" not in c.name and c.stat().st_size > 50000]
+                    if valid_cands:
+                        resolved_ref = str(valid_cands[0])
+                        break
+
+        if resolved_ref and os.path.exists(resolved_ref):
+            try:
+                base_img = Image.open(resolved_ref).convert("RGB")
+                bw, bh = base_img.size
+                target_ratio = w / h
+                current_ratio = bw / bh
+
+                if candidate_idx == 0:
+                    # Hero Portrait Focus: Crop upper 70% centered on character face & torso
+                    crop_h = int(bh * 0.70)
+                    crop_w = int(crop_h * target_ratio)
+                    left = max(0, (bw - crop_w) // 2)
+                    top = int(bh * 0.05)
+                    art = base_img.crop((left, top, min(bw, left + crop_w), min(bh, top + crop_h))).resize((w, h), Image.Resampling.LANCZOS)
+                    art = ImageEnhance.Contrast(art).enhance(1.18)
+                    art = ImageEnhance.Color(art).enhance(1.22)
+                elif candidate_idx == 1:
+                    # Full Cinematic Wide Poster: Entire composition with atmospheric grading
+                    if current_ratio > target_ratio:
+                        new_w = int(bh * target_ratio)
+                        left = (bw - new_w) // 2
+                        art = base_img.crop((left, 0, left + new_w, bh)).resize((w, h), Image.Resampling.LANCZOS)
+                    else:
+                        new_h = int(bw / target_ratio)
+                        top = (bh - new_h) // 2
+                        art = base_img.crop((0, top, bw, top + new_h)).resize((w, h), Image.Resampling.LANCZOS)
+                    art = ImageEnhance.Contrast(art).enhance(1.12)
+                    art = ImageEnhance.Sharpness(art).enhance(1.15)
+                elif candidate_idx == 2:
+                    # High-Contrast Cyber Noir: Boost neon reflections, deepen shadows
+                    crop_h = int(bh * 0.80)
+                    crop_w = int(crop_h * target_ratio)
+                    left = max(0, (bw - crop_w) // 2)
+                    top = int(bh * 0.10)
+                    art = base_img.crop((left, top, min(bw, left + crop_w), min(bh, top + crop_h))).resize((w, h), Image.Resampling.LANCZOS)
+                    art = ImageEnhance.Contrast(art).enhance(1.25)
+                    art = ImageEnhance.Color(art).enhance(1.30)
+                else:
+                    # Dynamic Flare / Action key visual
+                    crop_h = int(bh * 0.75)
+                    crop_w = int(crop_h * target_ratio)
+                    left = max(0, (bw - crop_w) // 2)
+                    top = 0
+                    art = base_img.crop((left, top, min(bw, left + crop_w), min(bh, top + crop_h))).resize((w, h), Image.Resampling.LANCZOS)
+                    art = ImageEnhance.Brightness(art).enhance(1.05)
+                    art = ImageEnhance.Color(art).enhance(1.15)
+
+                art.save(output_file, "JPEG", quality=95)
+                return output_file
+            except Exception as exc:
+                print(f"[ThumbnailManager] Processing ref image failed: {exc}")
+
+        # Fallback multi-gradient palette if reference image is completely unavailable
         palette = [
             (20, 24, 38),   # Deep midnight navy
             (40, 18, 28),   # Moody dark wine
@@ -84,18 +151,7 @@ class ThumbnailManager:
         base_color = palette[candidate_idx % len(palette)]
         img = Image.new("RGB", (w, h), base_color)
         draw = ImageDraw.Draw(img)
-
-        # Draw decorative background composition
         draw.ellipse([(200, 400), (880, 1200)], fill=(base_color[0] + 30, base_color[1] + 30, base_color[2] + 30))
-
-        if ref_image_path and os.path.exists(ref_image_path):
-            try:
-                ref = Image.open(ref_image_path).convert("RGBA")
-                ref = ref.resize((700, 900), Image.Resampling.LANCZOS)
-                img.paste(ref, (190, 500), ref)
-            except Exception:
-                pass
-
         img.save(output_file, "JPEG", quality=95)
         return output_file
 

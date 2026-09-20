@@ -292,9 +292,15 @@ class UpscalerBenchmark:
                     vram_peak = 3580.0 if engine_to_use == UpscalerEngine.FLASHVSR else 5840.0
 
             if mock_mode:
-                with open(out_file, "wb") as f:
-                    f.write(b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41")
-                    f.write(b"PREETI_STUDIO_UPSCALED_MASTER_VIDEO_STREAM" * 100)
+                cmd = [
+                    "-f", "lavfi",
+                    "-i", f"color=c=black:s={req.target_width}x{req.target_height}:d=1:r=24",
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-pix_fmt", "yuv420p",
+                    "-y", str(out_file),
+                ]
+                run_ffmpeg(cmd, timeout_s=15)
             else:
                 # Use high-quality FFmpeg Lanczos scaling filter
                 vf = (

@@ -30,7 +30,7 @@ if (Test-Path $pidFile) {
 
 Write-Host "Starting ComfyUI on 127.0.0.1:8188..."
 # Launch ComfyUI
-$process = Start-Process -FilePath $python -ArgumentList $comfyMain, "--listen", "127.0.0.1", "--port", "8188", "--extra-model-paths-config", "$root\services\comfyui\extra_model_paths.yaml" -WorkingDirectory "$root\services\comfyui\ComfyUI" -RedirectStandardOutput $logFile -RedirectStandardError $errFile -PassThru
+$process = Start-Process -WindowStyle Hidden -FilePath $python -ArgumentList $comfyMain, "--listen", "127.0.0.1", "--port", "8188", "--extra-model-paths-config", "$root\services\comfyui\extra_model_paths.yaml" -WorkingDirectory "$root\services\comfyui\ComfyUI" -RedirectStandardOutput $logFile -RedirectStandardError $errFile -PassThru
 
 $process.Id | Out-File -FilePath $pidFile -Encoding ascii
 Write-Host "ComfyUI process launched with PID $($process.Id)."

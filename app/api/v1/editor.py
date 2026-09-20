@@ -39,6 +39,12 @@ def list_actions():
     ]
 
 
+@router.get("/sources", response_model=List[AssetRecord])
+def list_sources(limit: int = 100):
+    """List recent image assets available to the local Qwen editor."""
+    return editor.list_source_assets(limit=limit)
+
+
 @router.post("/edit", response_model=SpecialistEditResponse)
 def trigger_edit(req: SpecialistEditRequest):
     """Trigger a specialist image edit on an approved character or scene keyframe."""
@@ -48,6 +54,17 @@ def trigger_edit(req: SpecialistEditRequest):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except FileNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.post("/execute", response_model=AssetRecord)
+def execute_edit(req: SpecialistEditRequest):
+    """Execute Qwen Image Edit locally and return the registered output asset."""
+    try:
+        return editor.execute_edit(req)
+    except (ValueError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
 
 @router.post("/complete", response_model=AssetRecord)

@@ -40,7 +40,14 @@ class WanGPAdapter:
     def __init__(self, project_root: Optional[str] = None):
         self.project_root = Path(project_root or os.getcwd()).resolve()
         self.wangp_dir = self.project_root / "services" / "wangp" / "Wan2GP"
-        self.wangp_env_python = self.project_root / "environments" / "wangp_env" / "Scripts" / "python.exe"
+        candidate_wangp = self.project_root / "environments" / "wangp_env" / "Scripts" / "python.exe"
+        comfy_env_python = self.project_root / "environments" / "comfy_env" / "Scripts" / "python.exe"
+        if candidate_wangp.exists() and (self.project_root / "environments" / "wangp_env" / "Lib" / "site-packages" / "torch").exists():
+            self.wangp_env_python = candidate_wangp
+        elif comfy_env_python.exists():
+            self.wangp_env_python = comfy_env_python
+        else:
+            self.wangp_env_python = candidate_wangp
 
     def check_disk_safety(self) -> float:
         """Verifies disk safety margin (minimum 80GB free buffer)."""
@@ -190,12 +197,19 @@ class WanGPAdapter:
             vram_peak_mb = 5420.0  # Measured Ampere 8GB baseline profile
 
             if mock_mode:
-                # Fast deterministic path for automated test suites
+                # Fast valid MP4 container for automated test suites
                 t0 = time.time()
-                # Create a placeholder MP4 file
-                with open(output_video_path, "wb") as f:
-                    f.write(b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41")
-                    f.write(b"MOCK_WANGP_H3_VIDEO_CONTENT" * 100)
+                from app.core.post.ffmpeg_utils import run_ffmpeg
+                cmd = [
+                    "-f", "lavfi",
+                    "-i", f"color=c=black:s={req.width}x{req.height}:d=1:r=24",
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-pix_fmt", "yuv420p",
+                    "-y",
+                    str(output_video_path),
+                ]
+                run_ffmpeg(cmd, timeout_s=15)
                 timings_ms["text_encoding_ms"] = 420
                 timings_ms["diffusion_sampling_ms"] = 1850
                 timings_ms["vae_decode_ms"] = 380

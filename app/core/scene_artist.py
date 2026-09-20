@@ -9,7 +9,7 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 from typing import Optional, Tuple
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageFont, ImageOps
 
 from app.core.post.ffmpeg_utils import get_ffmpeg_path, run_ffmpeg
 
@@ -32,31 +32,49 @@ def generate_flux_ai_image(
     width: int = 480,
     height: int = 864,
     steps: int = 4,
-    timeout_s: int = 60,
+    timeout_s: int = 1800,
+    seed: Optional[int] = None,
+    progress_client_id: Optional[str] = None,
 ) -> bool:
     """Invokes local ComfyUI API with FLUX.2 Klein 4B model to generate photorealistic AI imagery."""
     output_path = str(Path(output_path).resolve())
-    workflow_template_path = Path("workflows/api_format/flux_location_plate_v001.json").resolve()
+    workflow_template_path = Path(__file__).resolve().parents[2] / "workflows/api_format/flux_location_plate_v001.json"
     if not workflow_template_path.exists():
         return False
 
     with open(workflow_template_path, "r", encoding="utf-8") as f:
         workflow = json.load(f)
 
-    # Configure exact model paths and prompt parameters for ComfyUI
-    workflow["1"]["inputs"]["unet_name"] = r"diffusion_models\flux-2-klein-4b-fp8.safetensors"
-    workflow["2"]["inputs"]["clip_name"] = r"text_encoders\qwen_3_4b.safetensors"
-    workflow["2"]["inputs"]["type"] = "flux2"
-    workflow["3"]["inputs"]["vae_name"] = r"vae\flux2-vae.safetensors"
+    # Resolve actual registered names; mapping prefixes differ between installations.
+    try:
+        for node_id, kind, field, basename in [
+            ("1", "UNETLoader", "unet_name", "flux-2-klein-4b-fp8.safetensors"),
+            ("2", "CLIPLoader", "clip_name", "qwen_3_4b.safetensors"),
+            ("3", "VAELoader", "vae_name", "flux2-vae.safetensors"),
+        ]:
+            with urllib.request.urlopen(f"{COMFY_API_URL}/object_info/{kind}", timeout=10) as response:
+                info = json.load(response)
+            names = info[kind]["input"]["required"][field][0]
+            matches = [name for name in names if name.replace("\\", "/").split("/")[-1] == basename]
+            if not matches:
+                raise RuntimeError(f"ComfyUI cannot find {basename}")
+            workflow[node_id]["inputs"][field] = matches[0]
+        workflow["2"]["inputs"]["type"] = "flux2"
+    except Exception as exc:
+        print(f"[SceneArtist] Model lookup failed: {exc}")
+        return False
     workflow["4"]["inputs"]["text"] = prompt_text
     workflow["6"]["inputs"]["width"] = width
     workflow["6"]["inputs"]["height"] = height
     workflow["9"]["inputs"]["steps"] = steps
     workflow["9"]["inputs"]["width"] = width
     workflow["9"]["inputs"]["height"] = height
-    workflow["10"]["inputs"]["noise_seed"] = random.randint(1000, 999999)
+    workflow["10"]["inputs"]["noise_seed"] = seed if seed is not None else random.randint(1000, 999999)
 
-    payload = json.dumps({"prompt": workflow}).encode("utf-8")
+    prompt_payload = {"prompt": workflow}
+    if progress_client_id:
+        prompt_payload["client_id"] = progress_client_id
+    payload = json.dumps(prompt_payload).encode("utf-8")
     req = urllib.request.Request(
         f"{COMFY_API_URL}/prompt",
         data=payload,
@@ -71,20 +89,24 @@ def generate_flux_ai_image(
         return False
 
     # Poll for completion
-    start_t = time.time()
-    while time.time() - start_t < timeout_s:
+    start_t = time.monotonic()
+    while time.monotonic() - start_t < timeout_s:
         time.sleep(1.0)
         try:
             h_req = urllib.request.Request(f"{COMFY_API_URL}/history/{prompt_id}")
             h_data = json.loads(urllib.request.urlopen(h_req, timeout=5).read())
             if prompt_id in h_data:
+                status = h_data[prompt_id].get("status", {})
+                if status.get("status_str") == "error":
+                    print(f"[SceneArtist] ComfyUI execution failed: {status.get('messages', [])}")
+                    return False
                 outputs = h_data[prompt_id].get("outputs", {})
                 for node_id, node_out in outputs.items():
                     if "images" in node_out and node_out["images"]:
                         img_info = node_out["images"][0]
                         filename = img_info["filename"]
                         subfolder = img_info.get("subfolder", "")
-                        comfy_out_dir = Path("services/comfyui/ComfyUI/output").resolve()
+                        comfy_out_dir = Path(__file__).resolve().parents[2] / "services/comfyui/ComfyUI/output"
                         src_img_path = comfy_out_dir / subfolder / filename if subfolder else comfy_out_dir / filename
                         if src_img_path.exists():
                             os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -104,27 +126,29 @@ def build_ai_prompt(
     speaker: str,
     dialogue: Optional[str],
     genre: str,
+    framing: str = "medium",
 ) -> str:
-    """Constructs a descriptive, photorealistic cinematic prompt for FLUX diffusion."""
-    genre_lower = (genre or "cyberpunk").lower()
-    
-    clean_heading = scene_heading.replace("SCENE", "").replace("EXT.", "").replace("INT.", "").replace("-", ",").strip()
-    action_text = (action or "").strip()
-    if len(action_text) > 160:
-        action_text = action_text[:160]
-
-    if "cyber" in genre_lower:
-        base = "cinematic photorealistic Neo-Mumbai cyberpunk alley street at night, neon reflections on wet asphalt, holographic displays"
-    elif "romance" in genre_lower:
-        base = "cinematic photorealistic cozy monsoon cafe in evening, warm amber glass, rain drops on windows, soft warm bokeh"
-    elif "mystery" in genre_lower:
-        base = "cinematic photorealistic vintage archive room, shaft of moonlight cutting through dust motes, old wooden library shelves, antique brass safe"
+    """Describe the requested scene without inventing setting, costume or action."""
+    framing_lower = (framing or "medium").lower()
+    if "wide" in framing_lower:
+        framing_desc = "Cinematic wide establishing shot"
+    elif "insert" in framing_lower:
+        framing_desc = "Cinematic detail insert shot"
+    elif "close" in framing_lower:
+        framing_desc = "Cinematic close-up shot"
     else:
-        base = "cinematic photorealistic deep space observatory deck, nebula starlight outside viewing dome, glowing telemetry monitors"
-
-    character_desc = f"{speaker} protagonist" if speaker else "lone character"
-    full_prompt = f"{base}, {clean_heading}, {action_text}, {character_desc}, dramatic cinematic lighting, shallow depth of field, photorealistic 8k masterpiece"
-    return full_prompt
+        framing_desc = "Cinematic medium shot"
+    parts = [framing_desc]
+    if scene_heading:
+        parts.append(f"Setting: {scene_heading.strip()}")
+    if action:
+        parts.append(f"Action: {action.strip()}")
+    if speaker:
+        parts.append(f"Character: {speaker.strip()}")
+    if genre:
+        parts.append(f"Visual tone: {genre.strip()}")
+    parts.append("Photorealistic cinematography, coherent anatomy, natural detail")
+    return ". ".join(parts)
 
 
 def render_cinematic_keyframe(
@@ -138,54 +162,36 @@ def render_cinematic_keyframe(
     action: str = "",
     width: int = 1080,
     height: int = 1920,
+    framing: str = "medium",
+    seed: Optional[int] = None,
+    progress_client_id: Optional[str] = None,
 ) -> str:
     """Generates a high-quality vertical cinematic keyframe using local FLUX AI generation."""
     out_file = str(Path(output_image_path).resolve())
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
     # 1. Attempt Real Generative AI Image Generation with FLUX
-    ai_prompt = build_ai_prompt(title, scene_heading, action or dialogue or "", speaker, dialogue, genre)
-    print(f"[SceneArtist] Requesting FLUX AI generation for Beat {beat_number}: {ai_prompt[:80]}...")
-    
+    ai_prompt = build_ai_prompt(title, scene_heading, action or "", speaker, dialogue, genre, framing=framing)
+    print(f"[SceneArtist] Requesting FLUX AI generation for Beat {beat_number} ({framing}): {ai_prompt[:80]}...")
+
     temp_flux_png = str(Path(output_image_path).with_suffix(".flux.png"))
     ai_success = generate_flux_ai_image(
         prompt_text=ai_prompt,
         output_path=temp_flux_png,
-        width=480,
-        height=864,
+        width=768 if width <= height else 1344,
+        height=1344 if width < height else 768,
         steps=4,
-        timeout_s=45,
+        timeout_s=1800,
+        seed=seed,
+        progress_client_id=progress_client_id,
     )
 
     if ai_success and os.path.exists(temp_flux_png):
         try:
-            # Load and upscale/scale the AI generated image to target resolution
+            # Scale to clean target resolution (1080x1920) without any text or letterbox degradation
             ai_img = Image.open(temp_flux_png).convert("RGB")
-            ai_img = ai_img.resize((width, height), Image.Resampling.LANCZOS)
-            
-            # Add subtle, high-end cinematic letterboxing and typography
-            draw = ImageDraw.Draw(ai_img)
-            bar_height = 140
-            
-            # Sleek translucent letterboxing bars
-            top_bar = Image.new("RGBA", (width, bar_height), (0, 0, 0, 180))
-            bottom_bar = Image.new("RGBA", (width, bar_height), (0, 0, 0, 180))
-            
-            ai_rgba = ai_img.convert("RGBA")
-            ai_rgba.paste(top_bar, (0, 0), top_bar)
-            ai_rgba.paste(bottom_bar, (0, height - bar_height), bottom_bar)
-            ai_img = ai_rgba.convert("RGB")
-            draw = ImageDraw.Draw(ai_img)
-
-            # Typography
-            font_title = get_system_font(24)
-            font_meta = get_system_font(20)
-            
-            draw.text((40, 35), "PREETI STUDIO • FLUX.2 AI CINEMA", fill=(148, 163, 184), font=font_meta)
-            draw.text((40, 70), f"{title.upper()} — SCENE {beat_number:02d}", fill=(255, 255, 255), font=font_title)
-            
-            if speaker:
-                draw.text((40, height - 90), f"🎭 {speaker.upper()}", fill=(6, 182, 212), font=font_title)
+            if (ai_img.width, ai_img.height) != (width, height):
+                ai_img = ImageOps.fit(ai_img, (width, height), method=Image.Resampling.LANCZOS)
 
             ai_img.save(out_file, "JPEG", quality=95)
             try:
@@ -196,17 +202,10 @@ def render_cinematic_keyframe(
         except Exception as exc:
             print(f"[SceneArtist] Processing AI image failed: {exc}")
 
-    # 2. Fallback: Atmospheric gradient canvas if AI server is busy
-    print("[SceneArtist] Using gradient canvas fallback")
-    genre_lower = (genre or "cyberpunk").lower()
-    bg_col = (8, 10, 22) if "cyber" in genre_lower else ((24, 15, 12) if "romance" in genre_lower else (12, 13, 16))
-    img = Image.new("RGB", (width, height), bg_col)
-    draw = ImageDraw.Draw(img)
-    font_mid = get_system_font(36)
-    draw.text((80, height // 2 - 40), title.upper(), fill=(255, 255, 255), font=font_mid)
-    draw.text((80, height // 2 + 20), f"SCENE {beat_number:02d} • {genre.upper()}", fill=(148, 163, 184), font=get_system_font(24))
-    img.save(out_file, "JPEG", quality=90)
-    return out_file
+    raise RuntimeError(
+        f"FLUX keyframe generation failed for beat {beat_number}. "
+        "Check the local ComfyUI server, model availability and execution log."
+    )
 
 
 def render_shot_video_clip(
@@ -217,36 +216,45 @@ def render_shot_video_clip(
     fps: int = 24,
     width: int = 1080,
     height: int = 1920,
+    framing: str = "medium",
+    genre: str = "cyberpunk",
+    motion: str = "push_in",
 ) -> bool:
-    """Renders a dynamic 2.5D camera motion MP4 clip from a photorealistic keyframe image using FFmpeg."""
+    """Animate a still with a camera move (push/pull/pan/static); this is not generated motion."""
+    if width <= 0 or height <= 0 or width % 2 or height % 2 or fps <= 0:
+        raise ValueError("Video dimensions must be positive and even; fps must be positive")
+    if not math.isfinite(duration_s) or duration_s <= 0:
+        raise ValueError("Video duration must be positive and finite")
     out_file = str(Path(output_mp4_path).resolve())
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
-    dur = max(1.0, round(duration_s, 2))
-    total_frames = int(dur * fps)
-
-    # Alternating smooth cinematic camera movements
-    motion_idx = beat_number % 3
-    if motion_idx == 1:
-        # Slow cinematic push-in towards center
-        zoom_expr = f"zoompan=z='min(zoom+0.0006,1.10)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={width}x{height}:fps={fps}:d={total_frames}"
-    elif motion_idx == 2:
-        # Slow cinematic pan
-        zoom_expr = f"zoompan=z='1.06':x='if(lte(on,1),(iw-iw/zoom),max(0,x-0.5))':y='ih/2-(ih/zoom/2)':s={width}x{height}:fps={fps}:d={total_frames}"
-    else:
-        # Slow cinematic pull-out
-        zoom_expr = f"zoompan=z='if(lte(zoom,1.0),1.08,max(1.001,zoom-0.0004))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={width}x{height}:fps={fps}:d={total_frames}"
-
+    total_frames = max(1, round(duration_s * fps))
+    n = max(1, total_frames - 1)
+    centered = "x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2'"
+    zoompan = {
+        "push_in": f"z='1+0.04*on/{n}':{centered}",
+        "pull_out": f"z='1.04-0.04*on/{n}':{centered}",
+        "pan_left": f"z='1.06':x='(iw-iw/zoom)*(1-on/{n})':y='ih/2-ih/zoom/2'",
+        "pan_right": f"z='1.06':x='(iw-iw/zoom)*on/{n}':y='ih/2-ih/zoom/2'",
+        "tilt_up": f"z='1.06':x='iw/2-iw/zoom/2':y='(ih-ih/zoom)*(1-on/{n})'",
+        "tilt_down": f"z='1.06':x='iw/2-iw/zoom/2':y='(ih-ih/zoom)*on/{n}'",
+        "static": f"z='1':{centered}",
+    }.get(motion, f"z='1+0.04*on/{n}':{centered}")
+    # Supersample before zoompan to reduce integer-crop jitter. Crop preserves
+    # aspect ratio; no weather or exposure effects are added to the source.
+    work_w, work_h = width * 2, height * 2
+    filters = (
+        f"scale={work_w}:{work_h}:force_original_aspect_ratio=increase:flags=lanczos,"
+        f"crop={work_w}:{work_h},setsar=1,"
+        f"zoompan={zoompan}:"
+        f"s={width}x{height}:fps={fps}:d={total_frames}"
+    )
     cmd = [
-        "-y",
-        "-loop", "1",
-        "-i", str(Path(image_path).resolve()),
-        "-vf", zoom_expr,
-        "-t", str(dur),
-        "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-pix_fmt", "yuv420p",
-        "-r", str(fps),
-        out_file,
+        "-y", "-i", str(Path(image_path).resolve()),
+        "-vf", filters, "-frames:v", str(total_frames),
+        "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        "-pix_fmt", "yuv420p", "-movflags", "+faststart", out_file,
     ]
-    ret, _, _ = run_ffmpeg(cmd, timeout_s=60)
-    return ret == 0 and os.path.exists(out_file) and os.path.getsize(out_file) > 1000
+    ret, _, err = run_ffmpeg(cmd, timeout_s=max(180, int(duration_s * 60)))
+    if ret != 0:
+        raise RuntimeError(f"Still animation encoding failed: {err[-2000:]}")
+    return os.path.exists(out_file) and os.path.getsize(out_file) > 1000

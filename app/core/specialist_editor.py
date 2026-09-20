@@ -4,7 +4,9 @@ import os
 import shutil
 import sqlite3
 import time
+import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Any, Optional, List
 
 from app.core.config import settings
@@ -19,6 +21,9 @@ from app.core.models import (
     SpecialistEditResponse,
 )
 from app.core.queue import DurableQueue
+from app.core.local_video import request as comfy_request
+from app.core.visual_qa.dino_extractor import DINOExtractor
+from app.core.render_guard import gpu_render_lease
 
 
 ACTION_WORKFLOW_MAP = {
@@ -157,6 +162,108 @@ class SpecialistEditor:
             provenance_json=provenance,
         )
 
+    @staticmethod
+    def _registered_name(node_type: str, field: str, basename: str) -> str:
+        info = comfy_request(f"/object_info/{node_type}")
+        names = info[node_type]["input"]["required"][field][0]
+        matches = [name for name in names if name.replace("\\", "/").split("/")[-1] == basename]
+        if not matches:
+            raise RuntimeError(f"ComfyUI cannot find required model component {basename}")
+        return matches[0]
+
+    def execute_edit(self, req: SpecialistEditRequest, timeout_s: int = 2400) -> AssetRecord:
+        """Run a real Qwen Image Edit workflow and register its measured result."""
+        with gpu_render_lease("qwen_edit"):
+            return self._execute_edit_locked(req, timeout_s)
+
+    def _execute_edit_locked(self, req: SpecialistEditRequest, timeout_s: int) -> AssetRecord:
+        source = self.get_source_asset(req.source_asset_id)
+        if not source:
+            raise ValueError(f"Source asset not found: {req.source_asset_id}")
+        source_path = Path(source.file_path).resolve()
+        if not source_path.exists():
+            raise FileNotFoundError(f"Source image is missing: {source_path}")
+
+        workflow_name = ACTION_WORKFLOW_MAP[req.action]
+        workflow_path = Path(self.workflows_dir) / f"{workflow_name}.json"
+        with workflow_path.open("r", encoding="utf-8") as handle:
+            workflow = json.load(handle)
+
+        project_root = Path(__file__).resolve().parents[2]
+        comfy_input = project_root / "services" / "comfyui" / "ComfyUI" / "input"
+        comfy_output = project_root / "services" / "comfyui" / "ComfyUI" / "output"
+        staged_name = f"studio_qwen_{uuid.uuid4().hex}{source_path.suffix}"
+        staged_path = comfy_input / staged_name
+        output_prefix = f"studio_qwen/{uuid.uuid4().hex}"
+        prompt_text = req.instruction or DEFAULT_INSTRUCTIONS[req.action]
+        seed = req.seed or 1000
+
+        queue = comfy_request("/queue")
+        if queue.get("queue_running") or queue.get("queue_pending"):
+            raise RuntimeError("ComfyUI is busy; wait for the active render before editing an image.")
+        shutil.copy2(source_path, staged_path)
+        try:
+            comfy_request("/free", {"unload_models": True, "free_memory": True})
+            workflow["1"]["inputs"]["unet_name"] = self._registered_name(
+                "UNETLoader", "unet_name", "qwen_image_edit_2511_int8_convrot.safetensors"
+            )
+            workflow["2"]["inputs"]["clip_name"] = self._registered_name(
+                "CLIPLoader", "clip_name", "qwen_2.5_vl_7b_fp8_scaled.safetensors"
+            )
+            workflow["2"]["inputs"]["device"] = "cpu"
+            workflow["3"]["inputs"]["vae_name"] = self._registered_name(
+                "VAELoader", "vae_name", "qwen_image_vae.safetensors"
+            )
+            workflow["4"]["inputs"]["lora_name"] = self._registered_name(
+                "LoraLoaderModelOnly", "lora_name", "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors"
+            )
+            workflow["6"]["inputs"]["image"] = staged_name
+            workflow["7"]["inputs"]["prompt"] = prompt_text
+            workflow["10"]["inputs"]["seed"] = seed
+            workflow["12"]["inputs"]["filename_prefix"] = output_prefix
+
+            prompt_id = comfy_request("/prompt", {"prompt": workflow})["prompt_id"]
+            deadline = time.monotonic() + timeout_s
+            rendered = None
+            while time.monotonic() < deadline:
+                history = comfy_request(f"/history/{prompt_id}").get(prompt_id)
+                if history:
+                    status = history.get("status", {})
+                    if status.get("status_str") == "error":
+                        raise RuntimeError(f"Qwen edit failed: {status.get('messages', [])}")
+                    for node_output in history.get("outputs", {}).values():
+                        for image in node_output.get("images", []):
+                            candidate = comfy_output / image.get("subfolder", "") / image["filename"]
+                            if candidate.exists():
+                                rendered = candidate
+                    if rendered:
+                        break
+                time.sleep(2.0)
+            if rendered is None:
+                comfy_request("/queue", {"delete": [prompt_id]})
+                raise TimeoutError("Qwen image edit timed out in ComfyUI")
+
+            extractor = DINOExtractor()
+            evaluations = extractor.evaluate_candidates([str(rendered)], ref_char_path=str(source_path))
+            identity_score = evaluations[0]["raw_scores"]["whole_subject_similarity"]
+            output_asset_id = f"EDIT_{source.id}_{req.action.value.upper()}_{seed}"
+            return self.register_completed_edit_asset(
+                project_id=req.project_id,
+                output_asset_id=output_asset_id,
+                source_asset_id=source.id,
+                action=req.action,
+                image_path=str(rendered),
+                instruction=prompt_text,
+                seed=seed,
+                qa_metrics={
+                    "identity_similarity": identity_score,
+                    "evaluation": "REVIEW_REQUIRED" if identity_score < 0.82 else "DINO_PASS_SEMANTIC_REVIEW_REQUIRED",
+                    "semantic_qa": "not_run",
+                },
+            )
+        finally:
+            staged_path.unlink(missing_ok=True)
+
     def register_completed_edit_asset(
         self,
         project_id: str,
@@ -183,12 +290,7 @@ class SpecialistEditor:
             if os.path.abspath(image_path) != os.path.abspath(stored_path):
                 shutil.copy2(image_path, stored_path)
 
-            qa_data = qa_metrics or {
-                "identity_retention_score": 0.94,
-                "recognizability_score": 0.96,
-                "artifact_score": 0.05,
-                "evaluation": "PASSED",
-            }
+            qa_data = qa_metrics or {"evaluation": "NOT_EVALUATED"}
 
             provenance = {
                 "parent_asset_id": source_asset_id,
@@ -202,7 +304,7 @@ class SpecialistEditor:
 
             cursor.execute(
                 """
-                INSERT INTO assets (id, project_id, tier, kind, version, name, file_path, metadata_json, provenance_json, created_at)
+                INSERT OR REPLACE INTO assets (id, project_id, tier, kind, version, name, file_path, metadata_json, provenance_json, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
@@ -259,5 +361,27 @@ class SpecialistEditor:
                 )
                 for r in rows
             ]
+        finally:
+            conn.close()
+
+    def list_source_assets(self, limit: int = 100) -> List[AssetRecord]:
+        """Return recent local image assets that can be used as Qwen edit sources."""
+        conn = get_connection()
+        try:
+            rows = conn.execute(
+                "SELECT * FROM assets ORDER BY created_at DESC LIMIT ?", (max(1, min(limit, 500)),)
+            ).fetchall()
+            sources = []
+            for row in rows:
+                path = Path(row["file_path"])
+                if path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp"} or not path.exists():
+                    continue
+                sources.append(AssetRecord(
+                    id=row["id"], project_id=row["project_id"], tier=row["tier"], kind=row["kind"],
+                    version=row["version"], name=row["name"], file_path=row["file_path"],
+                    metadata_json=json.loads(row["metadata_json"] or "{}"),
+                    provenance_json=json.loads(row["provenance_json"] or "{}"), created_at=row["created_at"],
+                ))
+            return sources
         finally:
             conn.close()

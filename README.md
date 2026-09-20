@@ -1,3 +1,5 @@
+> **Current implementation status (20 September 2026):** The working Creator path is local FLUX imagery, clean camera motion, Windows speech, and FFmpeg assembly. Real-motion LTX-Video 0.9.5 inference has also been validated on a short sample and is the default Creator mode. Several specialist engines and benchmark claims below describe the original plan or mocks, not verified production inference. See [the quality repair report](docs/QUALITY_REPAIR_2026-09-20.md) for measured results and limits.
+
 # 🎬 Preeti Studio — Autonomous Local AI Film & Vertical Drama OS
 
 **Preeti Studio** is a locally operated, production-grade AI video studio operating system designed to produce:

@@ -27,7 +27,7 @@ if (Test-Path $pidFile) {
 
 Write-Host "Starting Studio Core on 127.0.0.1:8000..."
 $serverScript = "$root\scripts\run_server.py"
-$process = Start-Process -FilePath $python -ArgumentList $serverScript -WorkingDirectory $root -RedirectStandardOutput $logFile -RedirectStandardError "$logsDir\studio_core_err.log" -PassThru
+$process = Start-Process -WindowStyle Hidden -FilePath $python -ArgumentList $serverScript -WorkingDirectory $root -RedirectStandardOutput $logFile -RedirectStandardError "$logsDir\studio_core_err.log" -PassThru
 
 $process.Id | Out-File -FilePath $pidFile -Encoding ascii
 Write-Host "Studio Core started successfully with PID $($process.Id)."
@@ -39,4 +39,17 @@ try {
     Write-Host "Studio Core Health Check: $($health.status) (Free disk: $($health.free_disk_gb) GB)"
 } catch {
     Write-Warning "Studio Core is starting up or health probe had an issue. Check $logFile"
+}
+
+# WanGP sidecar (H3 video, Chatterbox voice, ACE-Step music). Warm-up takes ~1 minute; it stays resident.
+$wangpPython = "$root\environments\wangp_env\Scripts\python.exe"
+$wangpPid = "$logsDir\wangp_service.pid"
+$wangpRunning = $false
+if (Test-Path $wangpPid) {
+    $existing = Get-Content $wangpPid
+    if (Get-Process -Id $existing -ErrorAction SilentlyContinue) { $wangpRunning = $true }
+}
+if (-not $wangpRunning -and (Test-Path $wangpPython)) {
+    Write-Host "Starting WanGP sidecar on 127.0.0.1:8199 (session warms up in the background)..."
+    Start-Process -WindowStyle Hidden -FilePath $wangpPython -ArgumentList "$root\scripts\wangp_service.py" -WorkingDirectory $root -RedirectStandardOutput "$logsDir\wangp_service.log" -RedirectStandardError "$logsDir\wangp_service_err.log" | Out-Null
 }

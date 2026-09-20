@@ -40,6 +40,7 @@ class AssetKind(str, Enum):
     EDITED_ASSET = "edited_asset"
     VIDEO_SHOT = "video_shot"
     THUMBNAIL = "thumbnail"
+    UPLOADED = "uploaded"
 
 
 class SpecialistEditAction(str, Enum):
@@ -119,6 +120,7 @@ class JobRecord(BaseModel):
 class ProjectKind(str, Enum):
     SERIES = "series"
     CREATOR = "creator"
+    LIBRARY = "library"
 
 
 class ProjectCreate(BaseModel):

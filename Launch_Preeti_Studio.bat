@@ -9,6 +9,9 @@ echo.
 echo Starting Preeti Studio...
 cd /d "C:\Users\nikhi\Preeti_Studio"
 
+:: Ensure the local image/video engine is available too
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start_comfy.ps1
+
 :: Check if server is already running on port 8000
 netstat -ano | findstr :8000 | findstr LISTENING >nul
 if %errorlevel% equ 0 (

@@ -208,7 +208,7 @@ class AssemblyEngine:
             if req.burn_subtitles and subtitles_file and Path(subtitles_file).exists():
                 escaped_sub_path = subtitles_file.replace("\\", "/").replace(":", "\\:")
                 vf_parts.append(
-                    f"subtitles='{escaped_sub_path}':force_style='FontSize=22,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=3,Alignment=2,MarginV=70'"
+                    f"subtitles='{escaped_sub_path}':force_style='FontName=Arial,FontSize=9,PrimaryColour=&H00FFFFFF,OutlineColour=&H00101010,BorderStyle=1,Outline=0.7,Shadow=0.3,Alignment=2,MarginV=24,MarginL=16,MarginR=16'"
                 )
 
             vf_string = ",".join(vf_parts)
@@ -238,6 +238,9 @@ class AssemblyEngine:
                 "-vf", vf_string,
                 "-c:v", "libx264",
                 "-preset", "fast",
+                "-crf", "18",
+                "-movflags", "+faststart",
+                "-t", str(total_duration_s),
                 "-pix_fmt", "yuv420p",
                 "-r", str(req.fps),
                 "-c:a", "aac",

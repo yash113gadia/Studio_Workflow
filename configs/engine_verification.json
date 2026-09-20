@@ -1,0 +1,9 @@
+{
+  "qwen_image_edit": {
+    "runtime": "verified",
+    "selectable": true,
+    "verified_at": "2026-09-20",
+    "note": "Real Qwen Image Edit 2511 INT8 inference verified on this RTX 3070 (~8 min per edit, DINO identity 0.946 on outfit change).",
+    "evidence": "projects/LIBRARY/assets/edits/EDIT_UPLOAD_4d82fc39-7498-4d44-b63b-32d257cb2c8f_PRESERVE_IDENTITY_CHANGE_OUTFIT_1000.png"
+  }
+}

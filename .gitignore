@@ -41,3 +41,7 @@ services/wangp/Wan2GP/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Junction to models/ used by WanGP
+ckpts/
+

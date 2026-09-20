@@ -132,10 +132,18 @@ class ScailEngine:
             experimental = host_ram_mb > 14000.0
 
             if mock_mode:
-                # Fast deterministic output for automated test suite
-                with open(output_video_path, "wb") as f:
-                    f.write(b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41")
-                    f.write(b"SCAIL2_CONTROLLED_MOTION_VIDEO_OUTPUT" * 50)
+                # Fast valid MP4 container for test suite
+                from app.core.post.ffmpeg_utils import run_ffmpeg
+                cmd = [
+                    "-f", "lavfi",
+                    "-i", f"color=c=black:s={req.width}x{req.height}:d=1:r=24",
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-pix_fmt", "yuv420p",
+                    "-y",
+                    str(output_video_path),
+                ]
+                run_ffmpeg(cmd, timeout_s=15)
                 timings_ms = {
                     "pose_extraction_ms": 320,
                     "motion_latent_transfer_ms": 1420,
@@ -143,18 +151,11 @@ class ScailEngine:
                     "total_ms": int((time.time() - t0) * 1000),
                 }
             else:
-                # In production live mode, Wan2GP scail runner executes here
-                with open(output_video_path, "wb") as f:
-                    f.write(b"\x00\x00\x00 ftypisom\x00\x00\x02\x00isomiso2avc1mp41")
-                    f.write(b"SCAIL2_CONTROLLED_MOTION_VIDEO_OUTPUT" * 50)
-                timings_ms = {
-                    "pose_extraction_ms": 350,
-                    "motion_latent_transfer_ms": 1500,
-                    "video_decode_ms": 300,
-                    "total_ms": int((time.time() - start_time) * 1000),
-                }
+                raise ScailEngineError(
+                    "SCAIL motion transfer is not connected. Use AI actor motion (LTX Video) "
+                    "in the main Studio. No substitute performance was generated."
+                )
 
-            # Register output in assets table
             now_iso = datetime.now(timezone.utc).isoformat()
             provenance = {
                 "source_kind": "scail_2_performance",

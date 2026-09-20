@@ -54,6 +54,7 @@ class GPULeaseManager:
         """
         conn = get_connection()
         try:
+            conn.execute("BEGIN IMMEDIATE")
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM gpu_lease WHERE resource = ?", (cls.RESOURCE,))
             row = cursor.fetchone()

@@ -25,19 +25,23 @@ from app.api.v1.creator import router as creator_router
 from app.api.v1.series import router as series_router
 from app.api.v1.sandbox import router as sandbox_router
 from app.api.v1.media import router as media_router
-
-
+from app.api.v1.capabilities import router as capabilities_router
+from app.api.v1.storyboard import router as storyboard_router
+from app.core import storyboard, worker
+from fastapi.staticfiles import StaticFiles
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: initialize database and recover any stale running jobs from crash
     init_db()
+    storyboard.ensure_tables()
     recovered = DurableQueue.recover_stale_running_jobs()
     if recovered > 0:
         print(f"[Studio Core] Recovered {recovered} stale jobs on startup.")
+    worker.start()
     yield
-    # Shutdown
+    worker.stop()
     print("[Studio Core] Shutting down cleanly.")
 
 
@@ -74,6 +78,9 @@ app.include_router(creator_router, prefix="/api/v1")
 app.include_router(series_router, prefix="/api/v1")
 app.include_router(sandbox_router, prefix="/api/v1")
 app.include_router(media_router, prefix="/api/v1")
+app.include_router(capabilities_router, prefix="/api/v1")
+app.include_router(storyboard_router, prefix="/api/v1")
+app.mount("/static", StaticFiles(directory=str(Path(__file__).resolve().parent / "static")), name="static")
 
 
 @app.get("/", response_class=FileResponse)
