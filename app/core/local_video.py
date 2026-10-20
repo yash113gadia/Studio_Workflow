@@ -26,23 +26,32 @@ def request(path, payload=None):
         raise RuntimeError(f"ComfyUI rejected {path}: {detail}") from exc
 
 
-def build_workflow(image_name, prompt, width, height, frames, seed, steps=30, strength=0.72):
+def build_workflow(image_name, prompt, width, height, frames, seed, steps=30):
+    """LTX-Video 0.9.5 image-to-video, wired like the official ComfyUI example
+    (ComfyUI_examples/ltxv/ltxv_image_to_video.0.9.5.json): the source frame is
+    compressed like a video frame, pinned at frame 0 with full strength, and the
+    guide is cropped off before a plain VAE decode."""
     def node(kind, **inputs):
         return {'class_type': kind, 'inputs': inputs}
     return {
         '1': node('CheckpointLoaderSimple', ckpt_name='ltx-video-2b-v0.9.5.safetensors'),
         '2': node('CLIPLoader', clip_name=ENCODER, type='ltxv', device='cpu'),
         '3': node('CLIPTextEncode', clip=['2', 0], text=prompt),
-        '4': node('CLIPTextEncode', clip=['2', 0], text='deformed, distorted, motion smear, flicker, bad anatomy, text, watermark'),
+        '4': node('CLIPTextEncode', clip=['2', 0], text='low quality, worst quality, deformed, distorted, disfigured, '
+                  'motion smear, motion artifacts, fused fingers, bad anatomy, weird hand, ugly, text, watermark'),
         '5': node('LoadImage', image=image_name),
-        '6': node('LTXVImgToVideo', positive=['3', 0], negative=['4', 0], vae=['1', 2], image=['5', 0],
-                  width=width, height=height, length=frames, batch_size=1, strength=strength),
+        '13': node('LTXVPreprocess', image=['5', 0], img_compression=40),
+        '14': node('EmptyLTXVLatentVideo', width=width, height=height, length=frames, batch_size=1),
+        '6': node('LTXVAddGuide', positive=['3', 0], negative=['4', 0], vae=['1', 2], latent=['14', 0],
+                  image=['13', 0], frame_idx=0, strength=1.0),
         '7': node('LTXVConditioning', positive=['6', 0], negative=['6', 1], frame_rate=24.0),
         '8': node('LTXVScheduler', steps=steps, max_shift=2.05, base_shift=0.95, stretch=True, terminal=0.1, latent=['6', 2]),
         '9': node('KSamplerSelect', sampler_name='euler'),
         '10': node('SamplerCustom', model=['1', 0], add_noise=True, noise_seed=seed, cfg=3.0, positive=['7', 0],
                    negative=['7', 1], sampler=['9', 0], sigmas=['8', 0], latent_image=['6', 2]),
-        '11': node('VAEDecodeTiled', samples=['10', 0], vae=['1', 2], tile_size=256, overlap=64, temporal_size=16, temporal_overlap=8),
+        '15': node('LTXVCropGuides', positive=['7', 0], negative=['7', 1], latent=['10', 0]),
+        # ComfyUI falls back to tiled decoding by itself if this runs out of VRAM.
+        '11': node('VAEDecode', samples=['15', 2], vae=['1', 2]),
         '12': node('SaveWEBM', images=['11', 0], filename_prefix='studio_ltx/' + uuid.uuid4().hex, codec='vp9', fps=24.0, crf=18),
     }
 
@@ -60,24 +69,23 @@ def render_ltx_video(
     if queue.get('queue_running') or queue.get('queue_pending'):
         raise RuntimeError('ComfyUI is busy. Wait for its existing jobs before starting video inference.')
     request('/free', {'unload_models': True, 'free_memory': True})
+    # LTX turns each 32x32 pixel block into one latent cell and was trained around 768x512
+    # (0.39 MP). Far smaller frames give a coarse latent grid that decodes as smeared colour.
     profiles = {
         'draft': {
             'steps': 20,
-            'size': {'9:16': (320, 576), '16:9': (576, 320), '1:1': (384, 384)},
+            'size': {'9:16': (384, 672), '16:9': (672, 384), '1:1': (512, 512)},
             'crf': 21,
-            'strength': 0.64,
         },
         'balanced': {
             'steps': 30,
-            'size': {'9:16': (384, 672), '16:9': (672, 384), '1:1': (512, 512)},
+            'size': {'9:16': (480, 832), '16:9': (832, 480), '1:1': (640, 640)},
             'crf': 18,
-            'strength': 0.70,
         },
         'quality': {
             'steps': 36,
-            'size': {'9:16': (448, 800), '16:9': (800, 448), '1:1': (576, 576)},
+            'size': {'9:16': (544, 960), '16:9': (960, 544), '1:1': (736, 736)},
             'crf': 17,
-            'strength': 0.76,
         },
     }
     if quality_profile not in profiles:
@@ -105,7 +113,6 @@ def render_ltx_video(
             workflow = build_workflow(
                 filename, prompt, width, height, frames, seed + index,
                 steps=profile['steps'],
-                strength=profile['strength'],
             )
             for node_id, kind, field, basename in [('1', 'CheckpointLoaderSimple', 'ckpt_name', 'ltx-video-2b-v0.9.5.safetensors'), ('2', 'CLIPLoader', 'clip_name', ENCODER)]:
                 info = request('/object_info/' + kind)
@@ -162,7 +169,7 @@ def render_ltx_video(
             progress_callback('LTX segments joined and encoded.', 62)
         output.with_suffix('.generation.json').write_text(json.dumps({'model':'ltx-video-2b-v0.9.5',
             'encoder':ENCODER,'seed':seed,'steps':profile['steps'],'quality_profile':quality_profile,
-            'resolution':[width,height], 'segments':len(segments), 'denoise_strength':profile['strength'],
+            'resolution':[width,height], 'segments':len(segments), 'guide_strength':1.0,
             'duration_s':duration, 'source_image':str(source), 'action':action},indent=2),encoding='utf-8')
         return output.exists() and output.stat().st_size > 1000
     finally:

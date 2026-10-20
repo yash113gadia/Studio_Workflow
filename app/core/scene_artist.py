@@ -67,6 +67,9 @@ def generate_flux_ai_image(
     workflow["6"]["inputs"]["width"] = width
     workflow["6"]["inputs"]["height"] = height
     workflow["9"]["inputs"]["steps"] = steps
+    # flux-2-klein-4b-fp8 is the step-distilled model; the official template runs it at CFG 1.
+    # The base model setting (CFG 4-5) over-saturates it into smeared, painted-looking images.
+    workflow["7"]["inputs"]["cfg"] = 1.0
     workflow["9"]["inputs"]["width"] = width
     workflow["9"]["inputs"]["height"] = height
     workflow["10"]["inputs"]["noise_seed"] = seed if seed is not None else random.randint(1000, 999999)

@@ -46,12 +46,31 @@ def test_speech_starts_with_its_shot_and_keeps_duration(tmp_path):
     assert not any(data[round(2.8*24000)*2:])
 
 
-def test_ltx_workflow_contains_real_sampler_and_tiled_decode():
-    workflow = build_workflow('image.png', 'A farmer moves.', 384, 672, 97, 42)
-    assert workflow['6']['inputs']['image'] == ['5', 0]
+def test_ltx_workflow_matches_official_image_to_video_chain():
+    workflow = build_workflow('image.png', 'A farmer moves.', 480, 832, 97, 42)
+    # Source frame is preprocessed, then pinned at frame 0 with full strength.
+    assert workflow['13']['class_type'] == 'LTXVPreprocess'
+    assert workflow['13']['inputs']['image'] == ['5', 0]
+    assert workflow['6']['class_type'] == 'LTXVAddGuide'
+    assert workflow['6']['inputs']['image'] == ['13', 0]
+    assert workflow['6']['inputs']['frame_idx'] == 0
+    assert workflow['6']['inputs']['strength'] == 1.0
     assert workflow['10']['class_type'] == 'SamplerCustom'
     assert workflow['10']['inputs']['noise_seed'] == 42
-    assert workflow['11']['class_type'] == 'VAEDecodeTiled'
+    # The guide frame is cropped off before decoding.
+    assert workflow['15']['class_type'] == 'LTXVCropGuides'
+    assert workflow['11']['inputs']['samples'] == ['15', 2]
+
+
+def test_flux_templates_use_distilled_model_settings():
+    # flux-2-klein-4b-fp8 is step-distilled: the official template uses CFG 1 and 4 steps.
+    import json
+    templates = sorted((Path(__file__).resolve().parents[1] / 'workflows' / 'api_format').glob('flux_*.json'))
+    assert templates
+    for path in templates:
+        workflow = json.loads(path.read_text(encoding='utf-8'))
+        assert [n['inputs']['cfg'] for n in workflow.values() if n['class_type'] == 'CFGGuider'] == [1.0], path.name
+        assert [n['inputs']['steps'] for n in workflow.values() if n['class_type'] == 'Flux2Scheduler'] == [4], path.name
 
 
 def test_real_keyframe_failure_stops_pipeline(tmp_path):
