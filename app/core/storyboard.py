@@ -8,6 +8,8 @@ handled by app.core.worker.
 from __future__ import annotations
 
 import json
+import io
+import math
 import os
 import shutil
 import time
@@ -48,11 +50,23 @@ DEFAULT_SETTINGS = {
     "frame_interpolation": "off",
     "burn_subtitles": True,
     "keyframe_candidates": 2,
+    "input_mode": "screenplay",
+    "voice_language": "en",
+    "voice_name": "",
 }
 
 
 class StoryboardError(Exception):
     pass
+
+
+def _validate_narration_settings(settings: Dict[str, Any]) -> None:
+    if settings.get("input_mode", "screenplay") not in ("screenplay", "narration"):
+        raise StoryboardError("Choose screenplay or narration input.")
+    if settings.get("voice_language", "en") not in ("en", "hi"):
+        raise StoryboardError("Narration language must be English or Hindi/Hinglish.")
+    if not isinstance(settings.get("voice_name", ""), str) or len(settings.get("voice_name", "")) > 200:
+        raise StoryboardError("Choose a valid installed voice name.")
 
 
 def _now() -> str:
@@ -185,12 +199,18 @@ def create_storyboard(
     merged = {**DEFAULT_SETTINGS, **(settings or {})}
     if merged["aspect_ratio"] not in ASPECTS:
         raise StoryboardError(f"Unsupported aspect ratio {merged['aspect_ratio']}")
+    _validate_narration_settings(merged)
+    if not script_text.strip():
+        raise StoryboardError("Please enter a script containing text.")
+    if merged["input_mode"] == "narration":
+        from app.core.narration import plan_narration
+        plan = plan_narration(script_text, target_duration_s)
+    else:
+        beats = CreatorModeEngine.normalize_story_beats(script_text, target_duration_s)
+        plan = CreatorModeEngine.plan_shots(beats)
     if not project_id:
         project = ProjectManager.create_project(ProjectCreate(name=title, kind=ProjectKind.CREATOR, description="Storyboard project"))
         project_id = project.id
-
-    beats = CreatorModeEngine.normalize_story_beats(script_text, target_duration_s)
-    plan = CreatorModeEngine.plan_shots(beats)
 
     sb_id = _sb_id()
     now = _now()
@@ -209,7 +229,7 @@ def create_storyboard(
                 (
                     f"shot_{uuid.uuid4().hex[:10]}", sb_id, position, shot["shot_id"], shot["heading"], shot["action"],
                     shot.get("speaker") or "", shot.get("dialogue_line") or "", shot["framing"],
-                    round(float(shot["duration_s"]), 2), "auto", "push_in", None,
+                    round(float(shot["duration_s"]), 2), "2.5d" if merged["input_mode"] == "narration" else "auto", "push_in", None,
                     "inherit" if position > 1 and shot["beat_number"] == plan[position - 2]["beat_number"] else "flux",
                     "PLANNED", now, now,
                 ),
@@ -297,14 +317,24 @@ def get_shot(shot_id: str) -> Dict[str, Any]:
 
 def update_storyboard(sb_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
     board = get_storyboard(sb_id)
+    settings = {**board["settings"], **(patch.get("settings") or {})}
+    _validate_narration_settings(settings)
+    language_changed = settings.get("voice_language") != board["settings"].get("voice_language")
+    voice_changed = any(settings.get(k) != board["settings"].get(k) for k in ("voice_engine", "voice_name"))
     conn = get_connection()
     try:
         title = patch.get("title", board["title"])
-        settings = {**board["settings"], **(patch.get("settings") or {})}
         conn.execute(
             "UPDATE storyboards SET title = ?, settings_json = ?, updated_at = ? WHERE id = ?",
             (title, json.dumps(settings), _now(), sb_id),
         )
+        if language_changed:
+            conn.execute("UPDATE storyboard_shots SET selected_speech_id = NULL, selected_clip_id = NULL WHERE storyboard_id = ? AND dialogue != ''", (sb_id,))
+        elif voice_changed:
+            # A generated-voice choice does not change an approved uploaded recording.
+            conn.execute("""UPDATE storyboard_shots SET selected_speech_id = NULL, selected_clip_id = NULL
+                WHERE storyboard_id = ? AND dialogue != '' AND selected_speech_id IN
+                (SELECT id FROM shot_candidates WHERE kind = 'speech' AND engine != 'recording')""", (sb_id,))
         conn.commit()
     finally:
         conn.close()
@@ -328,7 +358,10 @@ def update_shot(shot_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
     if "keyframe_source" in fields and fields["keyframe_source"] not in KEYFRAME_SOURCES:
         raise StoryboardError(f"Unknown keyframe source {fields['keyframe_source']}")
     if "duration_s" in fields:
-        fields["duration_s"] = max(1.0, min(12.0, float(fields["duration_s"])))
+        duration = float(fields["duration_s"])
+        if not math.isfinite(duration) or not 1 <= duration <= 120.6:
+            raise StoryboardError("Shot duration must be between 1 and 120.6 seconds.")
+        fields["duration_s"] = duration
     if not fields:
         return shot
     # Any creative change invalidates the rendered clip, not the keyframe.
@@ -336,6 +369,7 @@ def update_shot(shot_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
         fields.setdefault("selected_clip_id", None)
     if "dialogue" in fields or "speaker" in fields:
         fields.setdefault("selected_speech_id", None)
+        fields.setdefault("selected_clip_id", None)
     fields["updated_at"] = _now()
     assignments = ", ".join(f"{k} = ?" for k in fields)
     conn = get_connection()
@@ -466,7 +500,45 @@ def select_candidate(cand_id: str) -> Dict[str, Any]:
     cand = get_candidate(cand_id)
     column = {"keyframe": "selected_keyframe_id", "clip": "selected_clip_id", "speech": "selected_speech_id"}[cand["kind"]]
     patch = {column: cand_id}
+    if cand["kind"] == "speech":
+        shot = get_shot(cand["shot_id"])
+        if cand["prompt"] != shot["dialogue"]:
+            raise StoryboardError("This recording belongs to an older line. Restore the text or upload/generate new narration.")
+        board = get_storyboard(shot["storyboard_id"])
+        if cand["provenance"].get("language", board["settings"].get("voice_language", "en")) != board["settings"].get("voice_language", "en"):
+            raise StoryboardError("This recording uses a different narration language.")
+        if cand["engine"] != "recording" and cand["provenance"].get("voice_name") and board["settings"].get("voice_name") and cand["provenance"]["voice_name"] != board["settings"]["voice_name"]:
+            raise StoryboardError("This recording uses a different narrator voice.")
+        patch.update(duration_s=max(float(shot["duration_s"]), float(cand["duration_s"]) + 0.6), selected_clip_id=None)
     return update_shot(cand["shot_id"], patch)
+
+
+def import_speech(shot_id: str, contents: bytes) -> Dict[str, Any]:
+    """Validate and attach a local PCM WAV recording, then measure its real duration."""
+    if not contents or len(contents) > 20 * 1024 * 1024:
+        raise StoryboardError("Upload a PCM WAV file of at most 20 MB.")
+    shot = get_shot(shot_id)
+    if not shot["dialogue"].strip():
+        raise StoryboardError("Enter the narration transcript before uploading its recording.")
+    try:
+        with wave.open(io.BytesIO(contents), "rb") as wav:
+            duration = wav.getnframes() / wav.getframerate()
+            if (wav.getcomptype() != "NONE" or wav.getnchannels() not in (1, 2)
+                    or not 8000 <= wav.getframerate() <= 192000 or wav.getsampwidth() not in (1, 2, 3, 4)
+                    or not 0 < duration <= 120):
+                raise ValueError()
+            expected = wav.getnframes() * wav.getnchannels() * wav.getsampwidth()
+            if len(wav.readframes(wav.getnframes())) != expected:
+                raise ValueError()
+    except (wave.Error, EOFError, ValueError, ZeroDivisionError):
+        raise StoryboardError("Recording must be a complete PCM WAV, mono/stereo, lasting at most 120 seconds.") from None
+    board = get_storyboard(shot["storyboard_id"])
+    out = _shot_dir(board, shot_id) / f"speech_upload_{uuid.uuid4().hex[:8]}.wav"
+    out.write_bytes(contents)
+    candidate = add_candidate(shot_id, "speech", str(out), engine="recording", prompt=shot["dialogue"],
+                              duration_s=duration, provenance={"speaker": shot["speaker"], "language": board["settings"].get("voice_language", "en")})
+    select_candidate(candidate["id"])
+    return get_candidate(candidate["id"])
 
 
 def candidate_from_asset(shot_id: str, asset_id: str) -> Dict[str, Any]:
@@ -508,7 +580,7 @@ def voice_engines() -> Dict[str, Dict[str, Any]]:
     from app.core.wangp_engines import engine_status
     wangp = engine_status()
     return {
-        "windows_sapi": {"label": "Windows offline voices", "available": True, "note": "Instant, robotic."},
+        "windows_sapi": {"label": "Windows offline voices", "available": os.name == "nt", "note": "Requires an installed voice for the selected language. You can also upload a WAV recording."},
         "chatterbox": {"label": "Chatterbox Multilingual (WanGP)", "available": wangp["chatterbox"]["available"], "note": wangp["chatterbox"]["note"]},
     }
 
@@ -565,6 +637,10 @@ def _selected(shot: Dict[str, Any], kind: str) -> Optional[Dict[str, Any]]:
     try:
         cand = get_candidate(cand_id)
     except StoryboardError:
+        return None
+    if cand["shot_id"] != shot["id"] or cand["kind"] != kind:
+        return None
+    if kind == "speech" and cand["prompt"] != shot["dialogue"]:
         return None
     return cand if Path(cand["file_path"]).exists() else None
 
@@ -722,14 +798,28 @@ def handle_clip(job_id: str, payload: Dict[str, Any]) -> List[str]:
 
 
 def handle_speech(job_id: str, payload: Dict[str, Any]) -> List[str]:
-    from app.core.audio.speech_synth import synthesize_speech
+    from app.core.audio.speech_synth import list_speech_voices, synthesize_speech
 
     board = get_storyboard(payload["storyboard_id"])
-    targets = [s for s in board["shots"] if s["dialogue"] and (not payload.get("shot_id") or s["id"] == payload["shot_id"])]
+    targets = [s for s in board["shots"] if s["dialogue"] and (not payload.get("shot_id") or s["id"] == payload["shot_id"])
+               and (not payload.get("only_missing") or not _selected(s, "speech"))]
     if not targets:
         return []
     voice_indices = {name: i for i, name in enumerate(sorted({s["speaker"] for s in board["shots"] if s["dialogue"]}))}
     engine = payload.get("voice_engine") or board["settings"].get("voice_engine") or "windows_sapi"
+    if engine not in ("windows_sapi", "chatterbox"):
+        raise StoryboardError(f"Unknown speech engine: {engine}")
+    language = board["settings"].get("voice_language", "en")
+    voice_name = board["settings"].get("voice_name", "")
+    if engine == "windows_sapi":
+        voices = [v for v in list_speech_voices() if v["language"].split("-")[0] == language]
+        if voice_name:
+            voices = [v for v in voices if v["name"] == voice_name]
+        if not voices:
+            raise StoryboardError("No matching Windows voice is installed. Choose a voice for this language or upload a WAV recording.")
+        if not voice_name and board["settings"].get("input_mode") == "narration":
+            voice_name = voices[0]["name"]
+            update_storyboard(board["id"], {"settings": {"voice_name": voice_name}})
     produced = []
     for index, shot in enumerate(targets, start=1):
         progress_emit(job_id, "speech", f"{shot['label']}: synthesizing dialogue with {engine} ({index}/{len(targets)}).", int(100 * (index - 1) / len(targets)))
@@ -742,14 +832,16 @@ def handle_speech(job_id: str, payload: Dict[str, Any]) -> List[str]:
                 progress=lambda m, p: progress_emit(job_id, "speech", f"{shot['label']}: {m}"),
             )
         else:
-            ok = synthesize_speech(shot["dialogue"], str(out), voice_index=voice_indices.get(shot["speaker"], 0))
+            ok = synthesize_speech(shot["dialogue"], str(out), voice_index=voice_indices.get(shot["speaker"], 0),
+                                   voice_name=voice_name or None, language=language)
         if not ok:
             raise StoryboardError(f"Speech synthesis failed for {shot['label']}.")
         duration = _speech_duration(str(out))
+        if not 0 < duration <= 120:
+            raise StoryboardError("Speech must last at most 120 seconds. Split this line into shorter shots.")
         cand = add_candidate(shot["id"], "speech", str(out), engine=engine, prompt=shot["dialogue"],
-                             duration_s=round(duration, 2), provenance={"speaker": shot["speaker"]}, job_id=job_id, select=True)
-        if duration + 0.6 > float(shot["duration_s"]):
-            update_shot(shot["id"], {"duration_s": round(duration + 0.6, 2), "selected_speech_id": cand["id"]})
+                             duration_s=duration, provenance={"speaker": shot["speaker"], "voice_name": voice_name, "language": language}, job_id=job_id)
+        select_candidate(cand["id"])
         produced.append(cand["id"])
     progress_emit(job_id, "speech", f"Dialogue ready for {len(produced)} shot(s).", 100)
     return produced
@@ -771,6 +863,9 @@ def handle_assemble(job_id: str, payload: Dict[str, Any]) -> List[str]:
     missing = [s["label"] for s in shots if not _selected(s, "clip")]
     if missing:
         raise StoryboardError(f"These shots have no rendered clip yet: {', '.join(missing)}")
+    missing_speech = [s["label"] for s in shots if s["dialogue"].strip() and not _selected(s, "speech")]
+    if missing_speech:
+        raise StoryboardError(f"Generate or upload narration before assembling: {', '.join(missing_speech)}")
 
     render_id = f"render_{uuid.uuid4().hex[:10]}"
     out_dir = _storyboard_dir(board) / "renders" / render_id
@@ -784,13 +879,15 @@ def handle_assemble(job_id: str, payload: Dict[str, Any]) -> List[str]:
         clip = _selected(shot, "clip")
         speech = _selected(shot, "speech")
         duration = float(clip.get("duration_s") or shot["duration_s"])
+        if speech and float(speech["duration_s"]) + 0.6 > duration + 0.01:
+            raise StoryboardError(f"{shot['label']}: clip is shorter than its narration. Render the clip again.")
         shot_clips.append(ShotClipInput(shot_id=shot["label"], video_path=clip["file_path"], in_trim_s=0.0, out_trim_s=duration))
         timeline.append({"shot_id": shot["label"], "duration_s": duration, "action": shot["action"],
                          "speech_path": speech["file_path"] if speech else None})
         if speech and shot["dialogue"]:
             subtitles.append(SubtitleEntry(
                 start_s=round(cursor + 0.3, 2), end_s=round(cursor + 0.3 + float(speech.get("duration_s") or duration - 0.6), 2),
-                text=shot["dialogue"], character_name=(shot["speaker"] or "").capitalize(),
+                text=shot["dialogue"], character_name=None if shot["speaker"] == "NARRATOR" else (shot["speaker"] or "").capitalize(),
             ))
         cursor += duration
     total = cursor

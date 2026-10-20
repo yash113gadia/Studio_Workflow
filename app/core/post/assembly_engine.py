@@ -257,15 +257,9 @@ class AssemblyEngine:
                     pass
 
             if code != 0:
-                # If complex mix had warning or missing audio device, fallback to safe assemble
-                fallback_cmd = [
-                    "-f", "concat", "-safe", "0", "-i", str(concat_txt_path),
-                    "-vf", f"scale={req.target_width}:{req.target_height}",
-                    "-c:v", "libx264",
-                    "-pix_fmt", "yuv420p",
-                    "-y", str(master_video_path),
-                ]
-                run_ffmpeg(fallback_cmd, timeout_s=60)
+                raise AssemblyEngineError(f"FFmpeg assembly failed; narration and captions were not exported: {stderr[-1500:]}")
+            if not master_video_path.is_file() or master_video_path.stat().st_size < 1000:
+                raise AssemblyEngineError("FFmpeg produced no valid master video.")
 
             elapsed_ms = int((time.time() - t0) * 1000)
 

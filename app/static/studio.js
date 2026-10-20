@@ -135,6 +135,21 @@
   }
   const engineOptions = (map, current) => Object.entries(map || {}).map(([k, e]) => [k, `${e.label}${e.available ? "" : " — unavailable"}`, !e.available && k !== current]);
 
+  function narrationVoiceFields(settings) {
+    const voices = el("div");
+    const fillVoices = () => {
+      const available = (state.installedVoices || []).filter((v) => v.language.split("-")[0] === (settings.voice_language || "en"));
+      const options = [["", "Choose automatically"] , ...available.map((v) => [v.name, `${v.name} (${v.language})`])];
+      if (settings.voice_name && !available.some((v) => v.name === settings.voice_name)) options.push([settings.voice_name, `${settings.voice_name} (not installed)`]);
+      voices.replaceChildren(field("Narrator voice", select(options, settings.voice_name || "", (v) => (settings.voice_name = v), { "aria-label": "Narrator voice" }),
+        available.length ? "The chosen voice is saved for this video." : "No Windows voice for this language was found. Upload a WAV recording in each shot, or install a matching Windows voice."));
+    };
+    fillVoices();
+    return el("div", {}, field("Narration language", select([["en", "English"], ["hi", "Hindi / Hinglish"]], settings.voice_language || "en", (v) => {
+      settings.voice_language = v; settings.voice_name = ""; fillVoices();
+    }, { "aria-label": "Narration language" }), "Choose the language of your text. This does not translate it."), voices);
+  }
+
   // ---------------------------------------------------------------- Router
   const routes = {};
   function navigate() {
@@ -182,20 +197,38 @@
     scifi: ["The Deep Signal", `SCENE 1: INT. ORBITAL OBSERVATORY - CONTINUOUS\nStarlight floods the observation deck. Commander Tara watches an anomaly pulsing on the deep space telemetry screen.\n\nTARA\n(into communications badge)\nStation Control, this isn't random radiation. It's an intelligent sequence.`],
   };
   routes.new = async () => {
-    const form = { title: "The Neon Cipher", script: PRESETS.cyberpunk[1], duration: 20, settings: { aspect_ratio: "9:16", genre: "cyberpunk_thriller", quality_profile: "balanced", seed: 42, style_prompt: "", keyframe_candidates: 2, music_engine: "off", foley_engine: "library", burn_subtitles: true, frame_interpolation: "off" } };
+    state.installedVoices = (await get("/storyboards/voices", { silent: true }).catch(() => ({ voices: [] }))).voices;
+    const form = { title: "The Neon Cipher", script: PRESETS.cyberpunk[1], duration: 20, settings: { input_mode: "screenplay", voice_language: "en", voice_name: "", aspect_ratio: "9:16", genre: "cyberpunk_thriller", quality_profile: "balanced", seed: 42, style_prompt: "", keyframe_candidates: 2, music_engine: "off", foley_engine: "library", burn_subtitles: true, frame_interpolation: "off" } };
     const title = el("input", { type: "text", value: form.title, oninput: (e) => (form.title = e.target.value) });
-    const script = el("textarea", { style: "min-height:220px", oninput: (e) => (form.script = e.target.value) }, form.script);
-    const chips = el("div", { class: "chips" }, ...Object.entries(PRESETS).map(([k, [t, s]]) => el("button", { class: "chip", onclick: () => { title.value = form.title = t; script.value = form.script = s; } }, t)));
+    const script = el("textarea", { "aria-label": "Story text / script", style: "min-height:220px", oninput: (e) => (form.script = e.target.value) }, form.script);
+    const mode = select([["screenplay", "Screenplay / dialogue"], ["narration", "Narrated story"]], "screenplay", (v) => { form.settings.input_mode = v; fillHint(); }, { "aria-label": "Story format" });
+    const scriptHint = el("div", { class: "hint" });
+    const fillHint = () => { scriptHint.textContent = form.settings.input_mode === "narration"
+      ? "Paste a reviewed short story or adaptation. Every word becomes narrator speech. Separate story moments with blank lines. Review each visual prompt before rendering; use English visual prompts when needed."
+      : "Use SCENE headings and NAME lines for dialogue. Each dialogue line becomes its own shot."; };
+    fillHint();
+    const chips = el("div", { class: "chips" }, ...Object.entries(PRESETS).map(([k, [t, s]]) => el("button", { class: "chip", onclick: () => { title.value = form.title = t; script.value = form.script = s; mode.value = form.settings.input_mode = "screenplay"; fillHint(); } }, t)));
+    const narrationExamples = {
+      en: "Priya had kept the cafe's last table empty all evening. When Aarav finally arrived, he was carrying the letter she had never sent.\n\nHe placed it beside her cup. The handwriting was hers. The date was tomorrow.",
+      hi: "प्रिया ने पूरी शाम कैफ़े की आख़िरी मेज़ खाली रखी थी। आरव आया, तो उसके हाथ में वही चिट्ठी थी जो उसने कभी भेजी ही नहीं थी।\n\nउसने चिट्ठी कप के पास रख दी। लिखावट प्रिया की थी। मगर तारीख़ कल की थी।",
+      hinglish: "Priya ne poori shaam cafe ki aakhri table khaali rakhi thi. Aarav aaya, toh uske haath mein woh letter tha jo usne kabhi bheja hi nahi tha.\n\nUsne letter cup ke paas rakh diya. Handwriting Priya ki thi. Lekin date kal ki thi."
+    };
+    const voiceFields = el("div", {}, narrationVoiceFields(form.settings));
     const setS = (k) => (v) => (form.settings[k] = v);
     const page = el("div", { class: "page" },
       el("div", { class: "page-head" }, el("div", {}, el("h1", {}, "New video"), el("p", {}, "Write or paste a script. Nothing renders until you review the shot list."))),
       el("div", { style: "display:grid;grid-template-columns:1.4fr 1fr;gap:18px" },
         el("div", { class: "card card-pad" },
-          field("Title", title), field("Story ideas", chips), field("Script / dialogue / action", script, "Use SCENE headings and NAME lines for dialogue. Each dialogue line becomes its own shot.")),
+          field("Title", title), field("Story format", mode), field("Screenplay examples", chips),
+          field("Narrated story examples", el("div", { class: "chips" }, ...[["en", "English"], ["hi", "Hindi"], ["hinglish", "Hinglish"]].map(([language, label]) => el("button", { class: "chip", onclick: () => {
+            title.value = form.title = "Tomorrow's Letter"; script.value = form.script = narrationExamples[language]; mode.value = form.settings.input_mode = "narration"; fillHint();
+            form.settings.voice_language = language === "en" ? "en" : "hi"; form.settings.voice_name = ""; voiceFields.replaceChildren(narrationVoiceFields(form.settings));
+          } }, label)))), field("Story text / script", script), scriptHint),
         el("div", { class: "card card-pad" },
           el("div", { class: "two" },
             field("Aspect", select([["9:16", "9:16 Portrait"], ["16:9", "16:9 Landscape"], ["1:1", "1:1 Square"]], "9:16", setS("aspect_ratio"))),
-            field("Target length", select([[10, "10 s"], [15, "15 s"], [20, "20 s"], [30, "30 s"], [45, "45 s"], [60, "60 s"]], 20, (v) => (form.duration = Number(v))))),
+            field("Target length", select([[10, "10 s"], [15, "15 s"], [20, "20 s"], [30, "30 s"], [45, "45 s"], [60, "60 s"], [90, "90 s"], [120, "120 s"]], 20, (v) => (form.duration = Number(v))), "Measured narration may extend the planned duration.")),
+          voiceFields,
           el("div", { class: "two" },
             field("Genre / look", select([["cyberpunk_thriller", "Cyberpunk thriller"], ["suspense_drama", "Suspense drama"], ["romance_cinematic", "Romantic cinematic"], ["action_chase", "Action"]], "cyberpunk_thriller", setS("genre"))),
             field("Quality", select([["draft", "Draft (fast)"], ["balanced", "Balanced"], ["quality", "Quality (slow)"]], "balanced", setS("quality_profile")))),
@@ -338,9 +371,24 @@
           ...["2.5d", "ltx", "h3"].map((e) => el("button", { class: "btn sm", disabled: busy || !kf || !state.engines?.[e]?.available, title: state.engines?.[e]?.note || "", onclick: () => genClip(s, e) }, `Render ${state.engines?.[e]?.label?.split(" ")[0] || e}`)))),
         clips.length ? el("div", { class: "strip" }, ...clips.map((c) => candCard(c, "clip"))) : el("div", { class: "muted small" }, "Render motion from the selected keyframe.")),
       s.dialogue ? el("div", { class: "section" },
-        el("div", { class: "section-h" }, el("h3", {}, `Voice (${speeches.length})`), el("button", { class: "btn sm", disabled: busy, onclick: () => post(`/storyboards/shots/${s.id}/speech`).then(() => toast("Voice queued")) }, "Regenerate voice")),
+        el("div", { class: "section-h" }, el("h3", {}, `Narration / voice (${speeches.length})`), el("div", { class: "row" },
+          el("label", { class: "btn sm" }, "Upload WAV", el("input", { type: "file", accept: ".wav,audio/wav", disabled: busy, style: "display:none", "aria-label": "Upload narration WAV", onchange: async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            e.target.disabled = true;
+            try {
+              const data = new FormData(); data.append("file", file);
+              await post(`/storyboards/shots/${s.id}/speech/upload`, data);
+              state.activeBoard = await get(`/storyboards/${b.id}`); renderWorkspace();
+              toast("Recording saved. Render the clip to match its duration.", "ok");
+            } finally { e.target.disabled = false; e.target.value = ""; }
+          } })),
+          el("button", { class: "btn sm", disabled: busy || !state.voiceEngines?.[b.settings.voice_engine || "windows_sapi"]?.available, onclick: () => post(`/storyboards/shots/${s.id}/speech`).then(() => toast("Voice queued")) }, "Generate voice"))),
+        el("p", { class: "hint" }, "Preview the selected recording before rendering motion. PCM WAV, mono/stereo, up to 20 MB and 120 seconds per shot."),
         speeches.length ? el("div", { class: "row" }, ...speeches.map((c) => el("div", { class: `card card-pad ${s.selected_speech_id === c.id ? "sel" : ""}`, style: `padding:8px 10px;${s.selected_speech_id === c.id ? "border-color:var(--accent)" : ""}` },
-          el("audio", { src: stream(c.file_path), controls: true, style: "height:30px" }), el("div", { class: "small muted" }, `${c.engine} · ${Number(c.duration_s).toFixed(1)}s`)))) : el("div", { class: "muted small" }, "No voice yet.")) : null);
+          el("audio", { src: stream(c.file_path), controls: true, style: "height:30px" }), el("div", { class: "small muted" }, `${c.engine} · ${Number(c.duration_s).toFixed(1)}s`),
+          s.selected_speech_id === c.id ? badge("Selected", "ok") : el("button", { class: "btn xs", disabled: busy, onclick: async () => {
+            await post(`/storyboards/candidates/${c.id}/select`); state.activeBoard = await get(`/storyboards/${b.id}`); renderWorkspace();
+          } }, "Use recording")))) : el("div", { class: "muted small" }, "Upload a recording or generate speech with an installed voice.")) : null);
   }
 
   function renderInspector(b, s) {
@@ -358,8 +406,8 @@
       field("Scene heading", el("input", { type: "text", value: s.heading, oninput: (e) => queue("heading", e.target.value) })),
       el("div", { class: "two" },
         field("Speaker", el("input", { type: "text", value: s.speaker, oninput: (e) => queue("speaker", e.target.value) })),
-        field("Duration (s)", el("input", { type: "number", min: 1, max: 12, step: 0.5, value: s.duration_s, onchange: (e) => queue("duration_s", Number(e.target.value)) }))),
-      field("Dialogue", el("textarea", { style: "min-height:56px", oninput: (e) => queue("dialogue", e.target.value) }, s.dialogue)),
+        field("Duration (s)", el("input", { type: "number", min: 1, max: 120.6, step: 0.1, value: s.duration_s, onchange: (e) => queue("duration_s", Number(e.target.value)) }))),
+      field(b.settings.input_mode === "narration" ? "Narration transcript" : "Dialogue", el("textarea", { "aria-label": "Narration transcript / dialogue", style: "min-height:56px", oninput: (e) => queue("dialogue", e.target.value) }, s.dialogue)),
       el("div", { class: "two" },
         field("Framing", select([["wide_establishing", "Wide establishing"], ["medium", "Medium"], ["medium_close_up", "Medium close-up"], ["hero_close_up", "Hero close-up"], ["dramatic_push_insert", "Insert"], ["wide_dynamic", "Wide dynamic"]], s.framing, (v) => queue("framing", v))),
         field("Seed", el("input", { type: "number", value: s.seed ?? "", placeholder: "auto", onchange: (e) => queue("seed", e.target.value === "" ? null : Number(e.target.value)) }))),
@@ -398,7 +446,8 @@
     const t = prompt("Title", b.title); if (!t) return;
     state.activeBoard = await patch(`/storyboards/${b.id}`, { title: t }); renderWorkspace();
   }
-  function boardSettings(b) {
+  async function boardSettings(b) {
+    state.installedVoices = (await get("/storyboards/voices", { silent: true }).catch(() => ({ voices: [] }))).voices;
     const s = { ...b.settings };
     const set = (k) => (v) => (s[k] = v);
     const body = el("div", {},
@@ -409,6 +458,7 @@
         field("Genre", select([["cyberpunk_thriller", "Cyberpunk thriller"], ["suspense_drama", "Suspense drama"], ["romance_cinematic", "Romantic"], ["action_chase", "Action"]], s.genre, set("genre"))),
         field("Seed", el("input", { type: "number", value: s.seed, oninput: (e) => (s.seed = Number(e.target.value)) }))),
       field("Style prompt", el("input", { type: "text", value: s.style_prompt || "", oninput: (e) => (s.style_prompt = e.target.value) })),
+      narrationVoiceFields(s),
       el("div", { class: "three" },
         field("Voice", select(engineOptions(state.voiceEngines, s.voice_engine), s.voice_engine, set("voice_engine")), state.voiceEngines?.[s.voice_engine]?.note),
         field("Music", select(engineOptions(state.musicEngines, s.music_engine), s.music_engine, set("music_engine")), state.musicEngines?.[s.music_engine]?.note),

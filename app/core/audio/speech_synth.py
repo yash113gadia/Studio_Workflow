@@ -1,5 +1,6 @@
 """Audio Synthesis Engine — Windows SAPI Speech Synthesis and FFmpeg Harmonic Music Beds."""
 import base64
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -8,7 +9,35 @@ from typing import Optional, List, Dict, Any
 from app.core.post.ffmpeg_utils import get_ffmpeg_path, run_ffmpeg
 
 
-def synthesize_speech(text: str, output_wav_path: str, rate: int = 0, voice_index: int = 0) -> bool:
+def list_speech_voices() -> List[Dict[str, str]]:
+    """Return installed, enabled Windows voices with their real culture codes."""
+    if os.name != "nt":
+        return []
+    code = """
+$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding
+Add-Type -AssemblyName System.Speech
+$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
+try {
+    $voices = @($synth.GetInstalledVoices() | Where-Object { $_.Enabled } | ForEach-Object {
+        @{ name = $_.VoiceInfo.Name; language = $_.VoiceInfo.Culture.Name }
+    })
+    ConvertTo-Json -InputObject $voices -Compress
+} finally { $synth.Dispose() }
+"""
+    try:
+        encoded = base64.b64encode(code.encode("utf-16le")).decode("ascii")
+        result = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
+                                capture_output=True, timeout=15)
+        voices = json.loads(result.stdout.decode("utf-8-sig")) if result.returncode == 0 else []
+        return sorted([v for v in voices if isinstance(v, dict) and v.get("name") and v.get("language")],
+                      key=lambda v: v["name"])
+    except (OSError, ValueError, TypeError, subprocess.TimeoutExpired):
+        return []
+
+
+def synthesize_speech(text: str, output_wav_path: str, rate: int = 0, voice_index: int = 0,
+                      voice_name: Optional[str] = None, language: Optional[str] = None) -> bool:
     """Synthesizes human speech from text into a WAV file using Windows Speech Synthesis."""
     if not text or not text.strip():
         return False
@@ -20,18 +49,30 @@ def synthesize_speech(text: str, output_wav_path: str, rate: int = 0, voice_inde
     clean_text = text.replace("\n", " ").strip()
     ps_text = clean_text.replace("'", "''")
     ps_path = out_file.replace("'", "''")
+    ps_voice = (voice_name or "").replace("'", "''")
+    if language not in (None, "en", "hi"):
+        return False
+    voice_filter = ""
+    if language:
+        voice_filter += f"$voices = @($voices | Where-Object {{ $_.VoiceInfo.Culture.TwoLetterISOLanguageName -eq '{language}' }})\n"
+    if voice_name:
+        voice_filter += f"$voices = @($voices | Where-Object {{ $_.VoiceInfo.Name -eq '{ps_voice}' }})\n"
     if not clean_text:
         return False
 
     ps_code = f"""
 Add-Type -AssemblyName System.Speech
+$ErrorActionPreference = 'Stop'
 $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
+try {{
 $synth.Rate = {int(rate)}
 $voices = @($synth.GetInstalledVoices() | Where-Object {{ $_.Enabled }})
-if ($voices.Count -gt 0) {{ $synth.SelectVoice($voices[{int(voice_index)} % $voices.Count].VoiceInfo.Name) }}
+{voice_filter}
+if ($voices.Count -eq 0) {{ throw 'No matching installed speech voice. Install the requested language voice or upload narration.' }}
+$synth.SelectVoice($voices[{int(voice_index)} % $voices.Count].VoiceInfo.Name)
 $synth.SetOutputToWaveFile('{ps_path}')
 $synth.Speak('{ps_text}')
-$synth.Dispose()
+}} finally {{ $synth.Dispose() }}
 """
     try:
         encoded = base64.b64encode(ps_code.encode("utf-16le")).decode("ascii")

@@ -1,7 +1,8 @@
 """Shot-level storyboard API: plan, edit, generate per shot, assemble."""
 from typing import Any, Dict, List, Literal, Optional
+from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.core import storyboard as sb
@@ -109,6 +110,12 @@ def engines():
     return {"motion": sb.available_engines(), "voice": sb.voice_engines(), "music": sb.music_engines()}
 
 
+@router.get("/voices")
+def installed_voices():
+    from app.core.audio.speech_synth import list_speech_voices
+    return {"voices": list_speech_voices()}
+
+
 @router.get("/{sb_id}")
 def get_board(sb_id: str):
     return _wrap(sb.get_storyboard, sb_id)
@@ -172,6 +179,17 @@ def gen_speech(shot_id: str):
     return sb.enqueue(JobKind.AUDIO_GEN, board, {"shot_id": shot_id}, shot_id=shot_id, priority=60)
 
 
+@router.post("/shots/{shot_id}/speech/upload")
+async def upload_speech(shot_id: str, file: UploadFile = File(...)):
+    try:
+        if Path(file.filename or "").suffix.lower() != ".wav":
+            raise HTTPException(status_code=400, detail="Upload a PCM WAV recording.")
+        contents = await file.read(20 * 1024 * 1024 + 1)
+        return _wrap(sb.import_speech, shot_id, contents)
+    finally:
+        await file.close()
+
+
 @router.post("/shots/{shot_id}/candidates/from-asset")
 def from_asset(shot_id: str, req: FromAsset):
     return _wrap(sb.candidate_from_asset, shot_id, req.asset_id)
@@ -200,7 +218,7 @@ def batch(sb_id: str, req: BatchRequest):
     board = _wrap(sb.get_storyboard, sb_id)
     jobs = []
     if req.speech and any(s["dialogue"] and (not req.only_missing or not s["selected_speech_id"]) for s in board["shots"]):
-        jobs.append(sb.enqueue(JobKind.AUDIO_GEN, board, {}, priority=90))
+        jobs.append(sb.enqueue(JobKind.AUDIO_GEN, board, {"only_missing": req.only_missing}, priority=90))
     for shot in board["shots"]:
         if req.keyframes and (not req.only_missing or not shot["selected_keyframe_id"]):
             jobs.append(sb.enqueue(JobKind.KEYFRAME_GEN, board, {"shot_id": shot["id"]}, shot_id=shot["id"], priority=80))
