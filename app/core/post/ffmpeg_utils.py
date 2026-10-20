@@ -7,35 +7,38 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
+STUDIO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _find_tool(name: str) -> str:
+    """Finds an FFmpeg tool on PATH, in the studio's tools folder, or in a winget package folder."""
+    on_path = shutil.which(name)
+    if on_path:
+        return on_path
+
+    exe = name + ".exe"
+    # Portable copy unpacked by scripts/setup_windows.ps1
+    for candidate in sorted((STUDIO_ROOT / "tools" / "ffmpeg").glob(f"*/bin/{exe}")):
+        return str(candidate)
+
+    # winget installs (Gyan.FFmpeg / Gyan.FFmpeg.Essentials) before PATH is refreshed
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        packages = Path(local_app_data) / "Microsoft" / "WinGet" / "Packages"
+        for candidate in sorted(packages.glob(f"Gyan.FFmpeg*/*/bin/{exe}")):
+            return str(candidate)
+
+    return name
+
+
 def get_ffmpeg_path() -> str:
     """Locates the FFmpeg executable on the machine."""
-    which_ffmpeg = shutil.which("ffmpeg")
-    if which_ffmpeg:
-        return which_ffmpeg
-
-    # Check known winget installation directory on this machine
-    winget_candidate = Path(
-        r"C:\Users\nikhi\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0.1-essentials_build\bin\ffmpeg.exe"
-    )
-    if winget_candidate.exists():
-        return str(winget_candidate)
-
-    return "ffmpeg"
+    return _find_tool("ffmpeg")
 
 
 def get_ffprobe_path() -> str:
     """Locates the FFprobe executable on the machine."""
-    which_ffprobe = shutil.which("ffprobe")
-    if which_ffprobe:
-        return which_ffprobe
-
-    winget_candidate = Path(
-        r"C:\Users\nikhi\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0.1-essentials_build\bin\ffprobe.exe"
-    )
-    if winget_candidate.exists():
-        return str(winget_candidate)
-
-    return "ffprobe"
+    return _find_tool("ffprobe")
 
 
 def run_ffmpeg(cmd_args: List[str], timeout_s: int = 180) -> Tuple[int, str, str]:

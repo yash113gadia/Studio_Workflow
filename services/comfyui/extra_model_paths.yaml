@@ -1,6 +1,7 @@
 # Preeti Studio Central Models Mapping for ComfyUI
+# A relative base_path is resolved by ComfyUI against this file's folder (services/comfyui).
 preeti_studio:
-  base_path: C:/Users/nikhi/Preeti_Studio/models
+  base_path: ../../models
   checkpoints: video/ltx25
   clip: image/text_encoders
   clip_vision: image

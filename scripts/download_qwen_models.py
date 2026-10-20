@@ -43,7 +43,7 @@ QWEN_MODELS = [
 
 
 def check_disk_space():
-    total, used, free = shutil.disk_usage("C:")
+    total, used, free = shutil.disk_usage(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     free_gb = free / (1024**3)
     print(f"Free disk space on C: {free_gb:.2f} GB")
     if free_gb < 80:

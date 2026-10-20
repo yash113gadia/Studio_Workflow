@@ -1,13 +1,10 @@
 # Start ComfyUI Service
 $ErrorActionPreference = "Stop"
-$root = "C:\Users\nikhi\Preeti_Studio"
+$root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
-$gitPath = "C:\Users\nikhi\AppData\Local\Microsoft\WinGet\Packages\Git.MinGit_Microsoft.Winget.Source_8wekyb3d8bbwe\cmd\git.exe"
-$env:GIT_PYTHON_GIT_EXECUTABLE = $gitPath
-if (Test-Path "C:\Users\nikhi\AppData\Local\Microsoft\WinGet\Packages\Git.MinGit_Microsoft.Winget.Source_8wekyb3d8bbwe\cmd") {
-    $env:Path = "C:\Users\nikhi\AppData\Local\Microsoft\WinGet\Packages\Git.MinGit_Microsoft.Winget.Source_8wekyb3d8bbwe\cmd;$env:Path"
-}
+$git = Get-Command git -ErrorAction SilentlyContinue
+if ($git) { $env:GIT_PYTHON_GIT_EXECUTABLE = $git.Source }
 
 $python = "$root\environments\comfy_env\Scripts\python.exe"
 $comfyMain = "$root\services\comfyui\ComfyUI\main.py"
@@ -30,7 +27,8 @@ if (Test-Path $pidFile) {
 
 Write-Host "Starting ComfyUI on 127.0.0.1:8188..."
 # Launch ComfyUI
-$process = Start-Process -WindowStyle Hidden -FilePath $python -ArgumentList $comfyMain, "--listen", "127.0.0.1", "--port", "8188", "--extra-model-paths-config", "$root\services\comfyui\extra_model_paths.yaml" -WorkingDirectory "$root\services\comfyui\ComfyUI" -RedirectStandardOutput $logFile -RedirectStandardError $errFile -PassThru
+# Paths are quoted because Start-Process does not quote arguments that contain spaces.
+$process = Start-Process -WindowStyle Hidden -FilePath $python -ArgumentList "`"$comfyMain`" --listen 127.0.0.1 --port 8188 --extra-model-paths-config `"$root\services\comfyui\extra_model_paths.yaml`"" -WorkingDirectory "$root\services\comfyui\ComfyUI" -RedirectStandardOutput $logFile -RedirectStandardError $errFile -PassThru
 
 $process.Id | Out-File -FilePath $pidFile -Encoding ascii
 Write-Host "ComfyUI process launched with PID $($process.Id)."

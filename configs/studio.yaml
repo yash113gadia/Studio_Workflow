@@ -4,7 +4,7 @@ version: "0.1.0"
 environment: "development"
 
 paths:
-  root: "C:\\Users\\nikhi\\Preeti_Studio"
+  # root defaults to the folder this repository is in, so the studio works from any location.
   configs: "configs"
   database: "database\\studio.db"
   models: "models"

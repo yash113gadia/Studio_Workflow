@@ -1,6 +1,6 @@
 # Stop ComfyUI Service Gracefully
 $ErrorActionPreference = "Continue"
-$root = "C:\Users\nikhi\Preeti_Studio"
+$root = Split-Path -Parent $PSScriptRoot
 $pidFile = "$root\logs\comfyui.pid"
 
 if (-not (Test-Path $pidFile)) {

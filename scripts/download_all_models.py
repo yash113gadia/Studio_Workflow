@@ -15,7 +15,7 @@ MODELS_DIR = STUDIO_ROOT / "models"
 SAFETY_BUFFER_GB = 80
 
 def free_gb():
-    return shutil.disk_usage("C:\\").free / (1024**3)
+    return shutil.disk_usage(STUDIO_ROOT).free / (1024**3)
 
 def dl(repo_id, filename, local_dir, subfolder=None, desc=""):
     """Download a single file from HuggingFace."""

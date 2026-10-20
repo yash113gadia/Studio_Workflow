@@ -24,7 +24,7 @@ HF_TOKEN = os.environ.get("HF_TOKEN", "")
 STATUS_FILE = MODELS_DIR / "download_manifest.json"
 
 def get_free_disk_gb():
-    total, used, free = shutil.disk_usage("C:\\")
+    total, used, free = shutil.disk_usage(STUDIO_ROOT)
     return free / (1024 ** 3)
 
 def load_status():
@@ -41,13 +41,13 @@ def save_status(status_dict):
     with open(STATUS_FILE, "w", encoding="utf-8") as f:
         json.dump(status_dict, f, indent=2)
 
-def download_file_resumable(url, destination_path, desc="", token=HF_TOKEN, max_retries=15):
+def download_file_resumable(url, destination_path, desc="", token=HF_TOKEN, max_retries=15, min_free_gb=SAFETY_BUFFER_GB):
     dest = Path(destination_path)
     dest.parent.mkdir(parents=True, exist_ok=True)
     
     free_gb = get_free_disk_gb()
-    if free_gb < SAFETY_BUFFER_GB + 0.5:
-        print(f"\n[ABORT] Disk space safety limit reached: {free_gb:.2f} GB free (< {SAFETY_BUFFER_GB} GB required)")
+    if free_gb < min_free_gb + 0.5:
+        print(f"\n[ABORT] Disk space safety limit reached: {free_gb:.2f} GB free (< {min_free_gb} GB required)")
         return False
 
     ctx = ssl.create_default_context()
@@ -64,7 +64,7 @@ def download_file_resumable(url, destination_path, desc="", token=HF_TOKEN, max_
     print(f"MODEL: {desc or dest.name}")
     print(f"TARGET: {dest.relative_to(STUDIO_ROOT) if dest.is_relative_to(STUDIO_ROOT) else dest}")
     print(f"SOURCE: {url}")
-    print(f"DISK FREE: {free_gb:.2f} GB (Buffer: {SAFETY_BUFFER_GB} GB)")
+    print(f"DISK FREE: {free_gb:.2f} GB (Buffer: {min_free_gb} GB)")
     print(f"{'='*75}")
 
     retries = 0

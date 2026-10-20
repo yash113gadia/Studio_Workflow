@@ -167,9 +167,9 @@ def check_models_integrity():
     print("=" * 85)
 
     # 1. Disk Space Verification
-    total, used, free = shutil.disk_usage("C:")
+    total, used, free = shutil.disk_usage(Path(__file__).resolve().parent.parent)
     free_gb = free / (1024**3)
-    print(f"Drive C: Free Space: {free_gb:.2f} GB (Required buffer: >= 80.0 GB)")
+    print(f"Studio Drive Free Space: {free_gb:.2f} GB (Required buffer: >= 80.0 GB)")
     if free_gb < 80.0:
         print(f"WARNING: Disk space buffer violation! Only {free_gb:.2f} GB available.")
         return 1

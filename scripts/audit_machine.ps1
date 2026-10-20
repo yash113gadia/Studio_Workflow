@@ -96,9 +96,9 @@ foreach ($p in $portsToCheck) {
 $audit["Port_Status"] = $portAudit
 
 # 10. Existing installations or model caches
-$existingComfy = Get-ChildItem -Path "C:\Users\nikhi" -Directory -Filter "*ComfyUI*" -Depth 2 -ErrorAction SilentlyContinue | Select-Object FullName
-$existingWan = Get-ChildItem -Path "C:\Users\nikhi" -Directory -Filter "*Wan*" -Depth 2 -ErrorAction SilentlyContinue | Select-Object FullName
-$existingModels = Get-ChildItem -Path "C:\Users\nikhi\.cache\huggingface", "C:\Users\nikhi\.cache" -Directory -ErrorAction SilentlyContinue | Select-Object FullName
+$existingComfy = Get-ChildItem -Path "$env:USERPROFILE" -Directory -Filter "*ComfyUI*" -Depth 2 -ErrorAction SilentlyContinue | Select-Object FullName
+$existingWan = Get-ChildItem -Path "$env:USERPROFILE" -Directory -Filter "*Wan*" -Depth 2 -ErrorAction SilentlyContinue | Select-Object FullName
+$existingModels = Get-ChildItem -Path "$env:USERPROFILE\.cache\huggingface", "$env:USERPROFILE\.cache" -Directory -ErrorAction SilentlyContinue | Select-Object FullName
 $audit["Existing_ComfyUI"] = $existingComfy
 $audit["Existing_Wan"] = $existingWan
 $audit["Existing_Caches"] = $existingModels

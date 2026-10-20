@@ -45,3 +45,8 @@ Thumbs.db
 # Junction to models/ used by WanGP
 ckpts/
 
+
+# Per-PC setup state (scripts/setup_windows.ps1)
+tools/
+database/*.bak
+database/.fresh_for_this_pc

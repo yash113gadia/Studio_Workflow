@@ -1,13 +1,21 @@
 @echo off
-title Preeti Studio - AI Film & Video Creator
+title Preeti Studio - AI Film ^& Video Creator
 color 0B
 
 echo =======================================================
-echo         PREETI STUDIO - AI FILM & VIDEO CREATOR       
+echo         PREETI STUDIO - AI FILM ^& VIDEO CREATOR
 echo =======================================================
 echo.
 echo Starting Preeti Studio...
-cd /d "C:\Users\nikhi\Preeti_Studio"
+cd /d "%~dp0"
+
+if not exist "environments\studio_core_env\Scripts\python.exe" (
+    echo Preeti Studio is not installed on this PC yet.
+    echo Double-click Setup_Preeti_Studio.bat first.
+    echo.
+    pause
+    exit /b 1
+)
 
 :: Ensure the local image/video engine is available too
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start_comfy.ps1

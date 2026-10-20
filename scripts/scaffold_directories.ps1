@@ -1,6 +1,6 @@
 # Scaffold full Studio OS directory structure
 
-$root = "C:\Users\nikhi\Preeti_Studio"
+$root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
 $dirs = @(

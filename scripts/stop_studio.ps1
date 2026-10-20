@@ -1,7 +1,7 @@
 # Stop Preeti Studio Core Service Gracefully
 
 $ErrorActionPreference = "Continue"
-$root = "C:\Users\nikhi\Preeti_Studio"
+$root = Split-Path -Parent $PSScriptRoot
 $pidFile = "$root\logs\studio_core.pid"
 
 if (-not (Test-Path $pidFile)) {

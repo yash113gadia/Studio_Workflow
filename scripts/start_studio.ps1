@@ -4,7 +4,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$root = "C:\Users\nikhi\Preeti_Studio"
+$root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
 $python = "$root\environments\studio_core_env\Scripts\python.exe"
@@ -27,7 +27,8 @@ if (Test-Path $pidFile) {
 
 Write-Host "Starting Studio Core on 127.0.0.1:8000..."
 $serverScript = "$root\scripts\run_server.py"
-$process = Start-Process -WindowStyle Hidden -FilePath $python -ArgumentList $serverScript -WorkingDirectory $root -RedirectStandardOutput $logFile -RedirectStandardError "$logsDir\studio_core_err.log" -PassThru
+# Paths are quoted because Start-Process does not quote arguments that contain spaces.
+$process = Start-Process -WindowStyle Hidden -FilePath $python -ArgumentList "`"$serverScript`"" -WorkingDirectory $root -RedirectStandardOutput $logFile -RedirectStandardError "$logsDir\studio_core_err.log" -PassThru
 
 $process.Id | Out-File -FilePath $pidFile -Encoding ascii
 Write-Host "Studio Core started successfully with PID $($process.Id)."
@@ -51,5 +52,5 @@ if (Test-Path $wangpPid) {
 }
 if (-not $wangpRunning -and (Test-Path $wangpPython)) {
     Write-Host "Starting WanGP sidecar on 127.0.0.1:8199 (session warms up in the background)..."
-    Start-Process -WindowStyle Hidden -FilePath $wangpPython -ArgumentList "$root\scripts\wangp_service.py" -WorkingDirectory $root -RedirectStandardOutput "$logsDir\wangp_service.log" -RedirectStandardError "$logsDir\wangp_service_err.log" | Out-Null
+    Start-Process -WindowStyle Hidden -FilePath $wangpPython -ArgumentList "`"$root\scripts\wangp_service.py`"" -WorkingDirectory $root -RedirectStandardOutput "$logsDir\wangp_service.log" -RedirectStandardError "$logsDir\wangp_service_err.log" | Out-Null
 }

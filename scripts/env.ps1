@@ -1,12 +1,14 @@
 # Studio Environment Helper
 # Loads Python, Git, and FFmpeg into current PowerShell session
 
+$root = Split-Path -Parent $PSScriptRoot
 $studioTools = @(
-    "C:\Users\nikhi\AppData\Local\Programs\Python\Python311",
-    "C:\Users\nikhi\AppData\Local\Programs\Python\Python311\Scripts",
-    "C:\Users\nikhi\AppData\Local\Microsoft\WinGet\Packages\Git.MinGit_Microsoft.Winget.Source_8wekyb3d8bbwe\cmd",
-    "C:\Users\nikhi\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0.1-essentials_build\bin"
+    "$env:LOCALAPPDATA\Programs\Python\Python311",
+    "$env:LOCALAPPDATA\Programs\Python\Python311\Scripts"
 )
+$studioTools += Get-ChildItem -Path "$root\tools\ffmpeg\*\bin" -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }
+$studioTools += Get-ChildItem -Path "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Git.MinGit*\cmd" -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }
+$studioTools += Get-ChildItem -Path "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Gyan.FFmpeg*\*\bin" -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }
 
 foreach ($p in $studioTools) {
     if (Test-Path $p) {

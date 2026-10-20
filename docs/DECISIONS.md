@@ -40,3 +40,9 @@ This log records every deliberate architectural decision, deviation, and upstrea
 - **Date:** 2026-09-20
 - **Decision:** `configs/engine_verification.json` records which engines passed real inference on this machine and overrides the static defaults in `app/core/capabilities.py`.
 - **Rationale:** Previous status strings were hand-edited and drifted from reality (e.g. Series pilot "PASSED" with formula-generated scores). Only verified engines are selectable in the UI.
+
+### [DEC-008] Portable install: root from the repo location, one-click setup, per-PC database
+- **Date:** 2026-10-20
+- **Context:** Installing on a second Windows PC. Root, FFmpeg, Git, Python and model paths were hard-coded to `C:\Users\nikhi`; the configured root made Studio Core put its database outside the repo and its health endpoint fail on any other machine. `requirements.txt` lacked `python-multipart`, so a fresh environment could not import the app. The README download step did not fetch the FLUX or T5 weights the Creator path needs.
+- **Decision:** Root is the repository folder (scripts use `$PSScriptRoot`, the launcher `%~dp0`, `extra_model_paths.yaml` a relative `base_path`). `Setup_Preeti_Studio.bat` runs `scripts/setup_windows.ps1`: hardware and driver check, Python 3.11 and FFmpeg if missing, both environments, ComfyUI at the DEC/KNOWN_GOOD commit `3c80da7`, the six core weight files with SHA256 checks (`scripts/download_core_models.py`), and a real render smoke test (`scripts/smoke_test.py`). PyTorch 2.14.0 uses `cu130` on driver 580+ (ComfyUI's guidance at that commit), else the `cu126` build verified on the RTX 3070.
+- **Database:** `database/studio.db` stays tracked so the original PC's data is untouched by a pull. A new PC moves it to `studio_from_original_pc.db.bak` and starts empty.

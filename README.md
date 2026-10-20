@@ -29,72 +29,57 @@ Engineered with strict hardware governance for consumer hardware (**RTX 3070 8GB
 
 ---
 
-## 🚀 Quickstart & Machine Replication Guide
+## 🚀 Quickstart: Set Up on a New Windows PC
 
-### 1. Prerequisites
-* **OS:** Windows 10/11 (or Linux with CUDA support)
-* **GPU:** NVIDIA GPU with $\ge 8\text{ GB}$ VRAM (CUDA 12.x compatible)
-* **RAM:** $\ge 16\text{ GB}$ System RAM
-* **Storage:** $\ge 120\text{ GB}$ free disk space (models: ~70 GB, safety buffer: $\ge 80\text{ GB}$)
-* **Tools:** Python 3.11, Git, FFmpeg
+### 1. Requirements
+* **OS:** Windows 10/11
+* **GPU:** NVIDIA RTX. Verified on an 8 GB RTX 3070; less VRAM is untested. Driver 580+ recommended; RTX 50-series requires it.
+* **RAM:** ≥ 16 GB
+* **Disk:** ≥ 40 GB free (core models ~24 GB; Python environments and ComfyUI take several GB more)
+* Python 3.11 and FFmpeg are installed by setup if missing. Git is optional.
 
----
-
-### 2. Clone the Repository
-```bash
-git clone <YOUR_GITHUB_REPO_URL> Preeti_Studio
-cd Preeti_Studio
-```
-
----
-
-### 3. Setup Python Runtime
-Create the core virtual environment and install dependencies:
+### 2. Get the Code
+Put it in a short path such as `C:\Preeti_Studio` (long paths can break the PyTorch install):
 ```powershell
-python -m venv environments/studio_core_env
-.\environments\studio_core_env\Scripts\pip.exe install -r requirements.txt
+git clone https://github.com/yash113gadia/Studio_Workflow.git C:\Preeti_Studio
 ```
+Or download the ZIP from GitHub (Code → Download ZIP) and extract it to a short path like `C:\Preeti_Studio`. With a ZIP, Windows may show "Windows protected your PC" when you open the `.bat` files: click **More info → Run anyway**.
 
----
+### 3. Run Setup (one time)
+Double-click **`Setup_Preeti_Studio.bat`**. It:
+1. Checks the GPU, NVIDIA driver, RAM and disk, and picks the matching PyTorch CUDA build.
+2. Installs Python 3.11 (winget, or python.org) and FFmpeg (into `tools\ffmpeg`) if missing.
+3. Creates `environments\studio_core_env` and `environments\comfy_env`, downloads ComfyUI at the verified commit, and confirms PyTorch can see the GPU.
+4. Downloads and SHA256-verifies the core models: FLUX.2 Klein 4B, LTX-Video 0.9.5, T5 encoder, DINOv2 (`scripts/download_core_models.py`, no Hugging Face token needed).
+5. Starts this PC on an empty database (the original PC's is kept as `database\studio_from_original_pc.db.bak`).
+6. Creates a **Preeti Studio** desktop shortcut, starts the studio, and runs `scripts/smoke_test.py`: a real FLUX image, a 2-second LTX clip, a Windows voice line and an FFmpeg check.
 
-### 4. Download Open-Source Model Weights (Autonomous)
-Preeti Studio includes an automated, resumable downloader with HTTP Range support and strict disk safety checks:
+Setup takes an hour or more, mostly downloading. If it stops, fix the reported problem and run it again; finished steps are skipped and downloads resume. The log is `logs\setup.log`.
 
+### 4. Use the Studio
+Double-click the **Preeti Studio** desktop icon (or `Launch_Preeti_Studio.bat`). It starts ComfyUI and the Studio server and opens:
+
+* **Studio Web UI:** [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+* **ComfyUI:** [http://127.0.0.1:8188](http://127.0.0.1:8188)
+* **FastAPI Backend OpenAPI / Swagger:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+Stop the background services with `scripts/stop_studio.ps1` and `scripts/stop_comfy.ps1`.
+
+### 5. Optional: Specialist Engines
+`scripts/download_staged_models.py` fetches ~60 GB of additional weights (MiniMax H3, SCAIL-2, FlashVSR, ACE-Step) for engines that are wired but **not verified** (see `docs/SETUP_STATUS.md`). They also need the WanGP runtime. The Creator path above does not use them.
+
+### 6. Developer Checks
 ```powershell
-# Set your Hugging Face access token
-$env:HF_TOKEN = "your_hf_token_here"
-
-# Launch the autonomous downloader
-& ".\environments\studio_core_env\Scripts\python.exe" scripts/download_staged_models.py
-```
-This will download and verify all 23 neural model files into `models/`.
-
----
-
-### 5. Verify Installation
-Run the built-in integrity auditor and system healthcheck:
-```powershell
-# Check model weights and disk headroom
+# Model weights and disk headroom
 & ".\environments\studio_core_env\Scripts\python.exe" scripts/check_models.py
 
-# Verify SQLite WAL database, 28 tables, and GPU mutex
-& ".\environments\studio_core_env\Scripts\python.exe" scripts/healthcheck.py
+# Post-install smoke test (Studio and ComfyUI must be running)
+& ".\environments\studio_core_env\Scripts\python.exe" scripts/smoke_test.py
 
-# Run the 83-test acceptance test suite
+# Test suite
 $env:PYTHONPATH="."
 & ".\environments\studio_core_env\Scripts\pytest.exe" -v tests/
 ```
-
----
-
-### 6. Launch the Studio
-Start both the FastAPI brain and ComfyUI dashboard:
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start_studio.ps1
-```
-
-* **ComfyUI UI Dashboard:** [http://127.0.0.1:8188](http://127.0.0.1:8188) (with custom `ComfyUI-AIStudio` sidebar)
-* **FastAPI Backend OpenAPI / Swagger:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ---
 

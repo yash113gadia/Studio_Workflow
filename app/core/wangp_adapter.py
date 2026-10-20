@@ -51,7 +51,7 @@ class WanGPAdapter:
 
     def check_disk_safety(self) -> float:
         """Verifies disk safety margin (minimum 80GB free buffer)."""
-        total, used, free = shutil.disk_usage("C:")
+        total, used, free = shutil.disk_usage(self.project_root.anchor)
         free_gb = free / (1024 ** 3)
         if free_gb < WANGP_MIN_DISK_BUFFER_GB:
             raise WanGPAdapterError(
